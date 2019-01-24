@@ -1,0 +1,870 @@
+﻿DRGCode,Description,maxV
+001,Heart Transplant Or Implant Of Heart Assist System W Mcc,33
+002,Heart Transplant Or Implant Of Heart Assist System W/O Mcc,33
+003,"Ecmo Or Trach W Mv >96 Hrs Or Pdx Exc Face, Mouth & Neck W Maj O.R.",33
+004,"Trach W Mv >96 Hrs Or Pdx Exc Face, Mouth & Neck W/O Maj O.R.",33
+005,Liver Transplant W Mcc Or Intestinal Transplant,33
+006,Liver Transplant W/O Mcc,33
+007,Lung Transplant,33
+008,Simultaneous Pancreas/Kidney Transplant,33
+009,Bone Marrow Transplant,27
+010,Pancreas Transplant,33
+011,"Tracheostomy For Face,Mouth & Neck Diagnoses W Mcc",33
+012,"Tracheostomy For Face,Mouth & Neck Diagnoses W Cc",33
+013,"Tracheostomy For Face,Mouth & Neck Diagnoses W/O Cc/Mcc",33
+014,Allogeneic Bone Marrow Transplant,33
+015,Autologous Bone Marrow Transplant,28
+016,Autologous Bone Marrow Transplant W Cc/Mcc,33
+017,Autologous Bone Marrow Transplant W/O Cc/Mcc,33
+018,Cranial & Peripheral Nerve Disorders W Cc,24
+019,Cranial & Peripheral Nerve Disorders W/O Cc,24
+020,Intracranial Vascular Procedures W Pdx Hemorrhage W Mcc,33
+021,Intracranial Vascular Procedures W Pdx Hemorrhage W Cc,33
+022,Intracranial Vascular Procedures W Pdx Hemorrhage W/O Cc/Mcc,33
+023,Cranio W Major Dev Impl/Acute Complex Cns Pdx W Mcc Or Chemo Implant,33
+024,Cranio W Major Dev Impl/Acute Complex Cns Pdx W/O Mcc,33
+025,Craniotomy & Endovascular Intracranial Procedures W Mcc,33
+026,Craniotomy & Endovascular Intracranial Procedures W Cc,33
+027,Craniotomy & Endovascular Intracranial Procedures W/O Cc/Mcc,33
+028,Spinal Procedures W Mcc,33
+029,Spinal Procedures W Cc Or Spinal Neurostimulators,33
+030,Spinal Procedures W/O Cc/Mcc,33
+031,Ventricular Shunt Procedures W Mcc,33
+032,Ventricular Shunt Procedures W Cc,33
+033,Ventricular Shunt Procedures W/O Cc/Mcc,33
+034,Carotid Artery Stent Procedure W Mcc,33
+035,Carotid Artery Stent Procedure W Cc,33
+036,Carotid Artery Stent Procedure W/O Cc/Mcc,33
+037,Extracranial Procedures W Mcc,33
+038,Extracranial Procedures W Cc,33
+039,Extracranial Procedures W/O Cc/Mcc,33
+040,Periph/Cranial Nerve & Other Nerv Syst Proc W Mcc,33
+041,Periph/Cranial Nerve & Other Nerv Syst Proc W Cc Or Periph Neurostim,33
+042,Periph/Cranial Nerve & Other Nerv Syst Proc W/O Cc/Mcc,33
+043,Hyphema,24
+044,Acute Major Eye Infections,24
+045,Neurological  Eye Disorders,24
+046,Other Disorders Of The Eye Age >17 W Cc,24
+047,Other Disorders Of The Eye Age >17 W/O Cc,24
+048,Other Disorders Of The Eye Age 0-17,24
+049,Major Head & Neck Procedures,24
+050,Sialoadenectomy,24
+051,Salivary Gland Procedures  Except Sialoadenectomy,24
+052,Spinal Disorders & Injuries W Cc/Mcc,33
+053,Spinal Disorders & Injuries W/O Cc/Mcc,33
+054,Nervous System Neoplasms W Mcc,33
+055,Nervous System Neoplasms W/O Mcc,33
+056,Degenerative Nervous System Disorders W Mcc,33
+057,Degenerative Nervous System Disorders W/O Mcc,33
+058,Multiple Sclerosis & Cerebellar Ataxia W Mcc,33
+059,Multiple Sclerosis & Cerebellar Ataxia W Cc,33
+060,Multiple Sclerosis & Cerebellar Ataxia W/O Cc/Mcc,33
+061,Acute Ischemic Stroke W Use Of Thrombolytic Agent W Mcc,33
+062,Acute Ischemic Stroke W Use Of Thrombolytic Agent W Cc,33
+063,Acute Ischemic Stroke W Use Of Thrombolytic Agent W/O Cc/Mcc,33
+064,Intracranial Hemorrhage Or Cerebral Infarction W Mcc,33
+065,Intracranial Hemorrhage Or Cerebral Infarction W Cc Or Tpa In 24 Hrs,33
+066,Intracranial Hemorrhage Or Cerebral Infarction W/O Cc/Mcc,33
+067,Nonspecific Cva & Precerebral Occlusion W/O Infarct W Mcc,33
+068,Nonspecific Cva & Precerebral Occlusion W/O Infarct W/O Mcc,33
+069,Transient Ischemia,33
+070,Nonspecific Cerebrovascular Disorders W Mcc,33
+071,Nonspecific Cerebrovascular Disorders W Cc,33
+072,Nonspecific Cerebrovascular Disorders W/O Cc/Mcc,33
+073,Cranial & Peripheral Nerve Disorders W Mcc,33
+074,Cranial & Peripheral Nerve Disorders W/O Mcc,33
+075,Viral Meningitis W Cc/Mcc,33
+076,Viral Meningitis W/O Cc/Mcc,33
+077,Hypertensive Encephalopathy W Mcc,33
+078,Hypertensive Encephalopathy W Cc,33
+079,Hypertensive Encephalopathy W/O Cc/Mcc,33
+080,Nontraumatic Stupor & Coma W Mcc,33
+081,Nontraumatic Stupor & Coma W/O Mcc,33
+082,"Traumatic Stupor & Coma, Coma >1 Hr W Mcc",33
+083,"Traumatic Stupor & Coma, Coma >1 Hr W Cc",33
+084,"Traumatic Stupor & Coma, Coma >1 Hr W/O Cc/Mcc",33
+085,"Traumatic Stupor & Coma, Coma <1 Hr W Mcc",33
+086,"Traumatic Stupor & Coma, Coma <1 Hr W Cc",33
+087,"Traumatic Stupor & Coma, Coma <1 Hr W/O Cc/Mcc",33
+088,Concussion W Mcc,33
+089,Concussion W Cc,33
+090,Concussion W/O Cc/Mcc,33
+091,Other Disorders Of Nervous System W Mcc,33
+092,Other Disorders Of Nervous System W Cc,33
+093,Other Disorders Of Nervous System W/O Cc/Mcc,33
+094,Bacterial & Tuberculous Infections Of Nervous System W Mcc,33
+095,Bacterial & Tuberculous Infections Of Nervous System W Cc,33
+096,Bacterial & Tuberculous Infections Of Nervous System W/O Cc/Mcc,33
+097,Non-Bacterial Infect Of Nervous Sys Exc Viral Meningitis W Mcc,33
+098,Non-Bacterial Infect Of Nervous Sys Exc Viral Meningitis W Cc,33
+099,Non-Bacterial Infect Of Nervous Sys Exc Viral Meningitis W/O Cc/Mcc,33
+100,Seizures W Mcc,33
+101,Seizures W/O Mcc,33
+102,Headaches W Mcc,33
+103,Headaches W/O Mcc,33
+104,Cardiac Valve & Oth Major Cardiothoracic Proc W Card Cath,24
+105,Cardiac Valve & Oth Major Cardiothoracic Proc W/O Card Cath,24
+106,Coronary Bypass W Ptca,24
+107,Coronary Bypass W Cardiac Cath,22
+108,Other Cardiothoracic Procedures,24
+109,Coronary Bypass W/O Ptca Or Cardiac Cath,22
+110,Major Cardiovascular Procedures  W Cc,24
+111,Major Cardiovascular Procedures  W/O Cc,24
+113,Orbital Procedures W Cc/Mcc,33
+114,Orbital Procedures W/O Cc/Mcc,33
+115,Extraocular Procedures Except Orbit,33
+116,Intraocular Procedures W Cc/Mcc,33
+117,Intraocular Procedures W/O Cc/Mcc,33
+118,Cardiac Pacemaker Device Replacement,24
+119,Vein Ligation & Stripping,24
+120,Other Circulatory  System O.R. Procedures,24
+121,Acute Major Eye Infections W Cc/Mcc,33
+122,Acute Major Eye Infections W/O Cc/Mcc,33
+123,Neurological Eye Disorders,33
+124,Other Disorders Of The Eye W Mcc,33
+125,Other Disorders Of The Eye W/O Mcc,33
+126,Acute & Subacute Endocarditis,24
+127,Heart Failure & Shock,24
+128,Deep Vein Thrombophlebitis,24
+129,Major Head & Neck Procedures W Cc/Mcc Or Major Device,33
+130,Major Head & Neck Procedures W/O Cc/Mcc,33
+131,Cranial/Facial Procedures W Cc/Mcc,33
+132,Cranial/Facial Procedures W/O Cc/Mcc,33
+133,"Other Ear, Nose, Mouth & Throat O.R. Procedures W Cc/Mcc",33
+134,"Other Ear, Nose, Mouth & Throat O.R. Procedures W/O Cc/Mcc",33
+135,Sinus & Mastoid Procedures W Cc/Mcc,33
+136,Sinus & Mastoid Procedures W/O Cc/Mcc,33
+137,Mouth Procedures W Cc/Mcc,33
+138,Mouth Procedures W/O Cc/Mcc,33
+139,Salivary Gland Procedures,33
+140,Angina Pectoris,24
+141,Syncope & Collapse W Cc,24
+142,Syncope & Collapse W/O Cc,24
+143,Chest Pain,24
+144,Other Circulatory  System Diagnoses W Cc,24
+145,Other Circulatory  System Diagnoses W/O Cc,24
+146,"Ear, Nose, Mouth & Throat Malignancy W Mcc",33
+147,"Ear, Nose, Mouth & Throat Malignancy W Cc",33
+148,"Ear, Nose, Mouth & Throat Malignancy W/O Cc/Mcc",33
+149,Dysequilibrium,33
+150,Epistaxis W Mcc,33
+151,Epistaxis W/O Mcc,33
+152,Otitis Media & Uri W Mcc,33
+153,Otitis Media & Uri W/O Mcc,33
+154,"Other Ear, Nose, Mouth & Throat Diagnoses W Mcc",33
+155,"Other Ear, Nose, Mouth & Throat Diagnoses W Cc",33
+156,"Other Ear, Nose, Mouth & Throat Diagnoses W/O Cc/Mcc",33
+157,Dental & Oral Diseases W Mcc,33
+158,Dental & Oral Diseases W Cc,33
+159,Dental & Oral Diseases W/O Cc/Mcc,33
+160,Hernia Procedures  Except Inguinal & Femoral Age >17 W/O Cc,24
+161,Inguinal & Femoral Hernia Procedures  Age >17 W Cc,24
+162,Inguinal & Femoral Hernia Procedures  Age >17 W/O Cc,24
+163,Major Chest Procedures W Mcc,33
+164,Major Chest Procedures W Cc,33
+165,Major Chest Procedures W/O Cc/Mcc,33
+166,Other Resp System O.R. Procedures W Mcc,33
+167,Other Resp System O.R. Procedures W Cc,33
+168,Other Resp System O.R. Procedures W/O Cc/Mcc,33
+169,Mouth Procedures  W/O Cc,24
+170,Other Digestive System O.R. Procedures  W Cc,24
+171,Other Digestive System O.R. Procedures  W/O Cc,24
+172,Digestive Malignancy  W Cc,24
+173,Digestive Malignancy  W/O Cc,24
+174,G.I. Hemorrhage  W Cc,24
+175,Pulmonary Embolism W Mcc,33
+176,Pulmonary Embolism W/O Mcc,33
+177,Respiratory Infections & Inflammations W Mcc,33
+178,Respiratory Infections & Inflammations W Cc,33
+179,Respiratory Infections & Inflammations W/O Cc/Mcc,33
+180,Respiratory Neoplasms W Mcc,33
+181,Respiratory Neoplasms W Cc,33
+182,Respiratory Neoplasms W/O Cc/Mcc,33
+183,Major Chest Trauma W Mcc,33
+184,Major Chest Trauma W Cc,33
+185,Major Chest Trauma W/O Cc/Mcc,33
+186,Pleural Effusion W Mcc,33
+187,Pleural Effusion W Cc,33
+188,Pleural Effusion W/O Cc/Mcc,33
+189,Pulmonary Edema & Respiratory Failure,33
+190,Chronic Obstructive Pulmonary Disease W Mcc,33
+191,Chronic Obstructive Pulmonary Disease W Cc,33
+192,Chronic Obstructive Pulmonary Disease W/O Cc/Mcc,33
+193,Simple Pneumonia & Pleurisy W Mcc,33
+194,Simple Pneumonia & Pleurisy W Cc,33
+195,Simple Pneumonia & Pleurisy W/O Cc/Mcc,33
+196,Interstitial Lung Disease W Mcc,33
+197,Interstitial Lung Disease W Cc,33
+198,Interstitial Lung Disease W/O Cc/Mcc,33
+199,Pneumothorax W Mcc,33
+200,Pneumothorax W Cc,33
+201,Pneumothorax W/O Cc/Mcc,33
+202,Bronchitis & Asthma W Cc/Mcc,33
+203,Bronchitis & Asthma W/O Cc/Mcc,33
+204,Respiratory Signs & Symptoms,33
+205,Other Respiratory System Diagnoses W Mcc,33
+206,Other Respiratory System Diagnoses W/O Mcc,33
+207,Respiratory System Diagnosis W Ventilator Support >96 Hours,33
+208,Respiratory System Diagnosis W Ventilator Support <96 Hours,33
+209,Major Joint & Limb Reattachment Procedures Of Lower E,22
+210,Hip & Femur Procedures  Except Major Joint Age >17 W Cc,24
+211,Hip & Femur Procedures  Except Major Joint Age >17 W/O Cc,24
+212,Hip & Femur Procedures  Except Major Joint Age 0-17,24
+213,Amputation For Musculoskeletal System & Conn Tissue Disorders,24
+215,Other Heart Assist System Implant,33
+216,Cardiac Valve & Oth Maj Cardiothoracic Proc W Card Cath W Mcc,33
+217,Cardiac Valve & Oth Maj Cardiothoracic Proc W Card Cath W Cc,33
+218,Cardiac Valve & Oth Maj Cardiothoracic Proc W Card Cath W/O Cc/Mcc,33
+219,Cardiac Valve & Oth Maj Cardiothoracic Proc W/O Card Cath W Mcc,33
+220,Cardiac Valve & Oth Maj Cardiothoracic Proc W/O Card Cath W Cc,33
+221,Cardiac Valve & Oth Maj Cardiothoracic Proc W/O Card Cath W/O Cc/Mcc,33
+222,Cardiac Defib Implant W Cardiac Cath W Ami/Hf/Shock W Mcc,33
+223,Cardiac Defib Implant W Cardiac Cath W Ami/Hf/Shock W/O Mcc,33
+224,Cardiac Defib Implant W Cardiac Cath W/O Ami/Hf/Shock W Mcc,33
+225,Cardiac Defib Implant W Cardiac Cath W/O Ami/Hf/Shock W/O Mcc,33
+226,Cardiac Defibrillator Implant W/O Cardiac Cath W Mcc,33
+227,Cardiac Defibrillator Implant W/O Cardiac Cath W/O Mcc,33
+228,Other Cardiothoracic Procedures W Mcc,33
+229,Other Cardiothoracic Procedures W Cc,33
+230,Other Cardiothoracic Procedures W/O Cc/Mcc,33
+231,Coronary Bypass W Ptca W Mcc,33
+232,Coronary Bypass W Ptca W/O Mcc,33
+233,Coronary Bypass W Cardiac Cath W Mcc,33
+234,Coronary Bypass W Cardiac Cath W/O Mcc,33
+235,Coronary Bypass W/O Cardiac Cath W Mcc,33
+236,Coronary Bypass W/O Cardiac Cath W/O Mcc,33
+237,Major Cardiovasc Procedures W Mcc,32
+238,Major Cardiovasc Procedures W/O Mcc,32
+239,Amputation For Circ Sys Disorders Exc Upper Limb & Toe W Mcc,33
+240,Amputation For Circ Sys Disorders Exc Upper Limb & Toe W Cc,33
+241,Amputation For Circ Sys Disorders Exc Upper Limb & Toe W/O Cc/Mcc,33
+242,Permanent Cardiac Pacemaker Implant W Mcc,33
+243,Permanent Cardiac Pacemaker Implant W Cc,33
+244,Permanent Cardiac Pacemaker Implant W/O Cc/Mcc,33
+245,Aicd Generator Procedures,33
+246,Perc Cardiovasc Proc W Drug-Eluting Stent W Mcc Or 4+ Vessels/Stents,33
+247,Perc Cardiovasc Proc W Drug-Eluting Stent W/O Mcc,33
+248,Perc Cardiovasc Proc W Non-Drug-Eluting Stent W Mcc Or 4+ Ves/Stents,33
+249,Perc Cardiovasc Proc W Non-Drug-Eluting Stent W/O Mcc,33
+250,Perc Cardiovasc Proc W/O Coronary Artery Stent W Mcc,33
+251,Perc Cardiovasc Proc W/O Coronary Artery Stent W/O Mcc,33
+252,Other Vascular Procedures W Mcc,33
+253,Other Vascular Procedures W Cc,33
+254,Other Vascular Procedures W/O Cc/Mcc,33
+255,Upper Limb & Toe Amputation For Circ System Disorders W Mcc,33
+256,Upper Limb & Toe Amputation For Circ System Disorders W Cc,33
+257,Upper Limb & Toe Amputation For Circ System Disorders W/O Cc/Mcc,33
+258,Cardiac Pacemaker Device Replacement W Mcc,33
+259,Cardiac Pacemaker Device Replacement W/O Mcc,33
+260,Cardiac Pacemaker Revision Except Device Replacement W Mcc,33
+261,Cardiac Pacemaker Revision Except Device Replacement W Cc,33
+262,Cardiac Pacemaker Revision Except Device Replacement W/O Cc/Mcc,33
+263,Vein Ligation & Stripping,33
+264,Other Circulatory System O.R. Procedures,33
+265,Aicd Lead Procedures,33
+266,Endovascular Cardiac Valve Replacement W Mcc,33
+267,Endovascular Cardiac Valve Replacement W/O Mcc,33
+268,Aortic And Heart Assist Procedures Except Pulsation Balloon W Mcc,33
+269,Aortic And Heart Assist Procedures Except Pulsation Balloon W/O Mcc,33
+270,Other Major Cardiovascular Procedures W Mcc,33
+271,Other Major Cardiovascular Procedures W Cc,33
+272,Other Major Cardiovascular Procedures W/O Cc/Mcc,33
+273,Percutaneous Intracardiac Procedures W Mcc,33
+274,Percutaneous Intracardiac Procedures W/O Mcc,33
+275,Malignant Breast Disorders W/O Cc,24
+276,Non-Maligant  Breast Disorders,24
+277,Cellulitis Age >17 W Cc,24
+278,Cellulitis Age >17 W/O Cc,24
+279,Cellulitis Age 0-17,24
+280,"Acute Myocardial Infarction, Discharged Alive W Mcc",33
+281,"Acute Myocardial Infarction, Discharged Alive W Cc",33
+282,"Acute Myocardial Infarction, Discharged Alive W/O Cc/Mcc",33
+283,"Acute Myocardial Infarction, Expired W Mcc",33
+284,"Acute Myocardial Infarction, Expired W Cc",33
+285,"Acute Myocardial Infarction, Expired W/O Cc/Mcc",33
+286,"Circulatory Disorders Except Ami, W Card Cath W Mcc",33
+287,"Circulatory Disorders Except Ami, W Card Cath W/O Mcc",33
+288,Acute & Subacute Endocarditis W Mcc,33
+289,Acute & Subacute Endocarditis W Cc,33
+290,Acute & Subacute Endocarditis W/O Cc/Mcc,33
+291,Heart Failure & Shock W Mcc,33
+292,Heart Failure & Shock W Cc,33
+293,Heart Failure & Shock W/O Cc/Mcc,33
+294,Deep Vein Thrombophlebitis W Cc/Mcc,33
+295,Deep Vein Thrombophlebitis W/O Cc/Mcc,33
+296,"Cardiac Arrest, Unexplained W Mcc",33
+297,"Cardiac Arrest, Unexplained W Cc",33
+298,"Cardiac Arrest, Unexplained W/O Cc/Mcc",33
+299,Peripheral Vascular Disorders W Mcc,33
+300,Peripheral Vascular Disorders W Cc,33
+301,Peripheral Vascular Disorders W/O Cc/Mcc,33
+302,Atherosclerosis W Mcc,33
+303,Atherosclerosis W/O Mcc,33
+304,Hypertension W Mcc,33
+305,Hypertension W/O Mcc,33
+306,Cardiac Congenital & Valvular Disorders W Mcc,33
+307,Cardiac Congenital & Valvular Disorders W/O Mcc,33
+308,Cardiac Arrhythmia & Conduction Disorders W Mcc,33
+309,Cardiac Arrhythmia & Conduction Disorders W Cc,33
+310,Cardiac Arrhythmia & Conduction Disorders W/O Cc/Mcc,33
+311,Angina Pectoris,33
+312,Syncope & Collapse,33
+313,Chest Pain,33
+314,Other Circulatory System Diagnoses W Mcc,33
+315,Other Circulatory System Diagnoses W Cc,33
+316,Other Circulatory System Diagnoses W/O Cc/Mcc,33
+317,Admit For Renal Dialysis,24
+318,Kidney & Urinary Tract Neoplasms W Cc,24
+319,Kidney & Urinary Tract Neoplasms W/O Cc,24
+320,Kidney & Urinary Tract Infections Age >17 W Cc,24
+321,Kidney & Urinary Tract Infections Age >17 W/O Cc,24
+322,Kidney & Urinary Tract Infections Age 0-17,24
+323,"Urinary Stones W Cc, &/Or Esw Lithotripsy",24
+324,Urinary Stones W/O Cc,24
+325,Kidney & Urinary Tract Signs & Symptoms Age >17 W Cc,24
+326,"Stomach, Esophageal & Duodenal Proc W Mcc",33
+327,"Stomach, Esophageal & Duodenal Proc W Cc",33
+328,"Stomach, Esophageal & Duodenal Proc W/O Cc/Mcc",33
+329,Major Small & Large Bowel Procedures W Mcc,33
+330,Major Small & Large Bowel Procedures W Cc,33
+331,Major Small & Large Bowel Procedures W/O Cc/Mcc,33
+332,Rectal Resection W Mcc,33
+333,Rectal Resection W Cc,33
+334,Rectal Resection W/O Cc/Mcc,33
+335,Peritoneal Adhesiolysis W Mcc,33
+336,Peritoneal Adhesiolysis W Cc,33
+337,Peritoneal Adhesiolysis W/O Cc/Mcc,33
+338,Appendectomy W Complicated Principal Diag W Mcc,33
+339,Appendectomy W Complicated Principal Diag W Cc,33
+340,Appendectomy W Complicated Principal Diag W/O Cc/Mcc,33
+341,Appendectomy W/O Complicated Principal Diag W Mcc,33
+342,Appendectomy W/O Complicated Principal Diag W Cc,33
+343,Appendectomy W/O Complicated Principal Diag W/O Cc/Mcc,33
+344,Minor Small & Large Bowel Procedures W Mcc,33
+345,Minor Small & Large Bowel Procedures W Cc,33
+346,Minor Small & Large Bowel Procedures W/O Cc/Mcc,33
+347,Anal & Stomal Procedures W Mcc,33
+348,Anal & Stomal Procedures W Cc,33
+349,Anal & Stomal Procedures W/O Cc/Mcc,33
+350,Inguinal & Femoral Hernia Procedures W Mcc,33
+351,Inguinal & Femoral Hernia Procedures W Cc,33
+352,Inguinal & Femoral Hernia Procedures W/O Cc/Mcc,33
+353,Hernia Procedures Except Inguinal & Femoral W Mcc,33
+354,Hernia Procedures Except Inguinal & Femoral W Cc,33
+355,Hernia Procedures Except Inguinal & Femoral W/O Cc/Mcc,33
+356,Other Digestive System O.R. Procedures W Mcc,33
+357,Other Digestive System O.R. Procedures W Cc,33
+358,Other Digestive System O.R. Procedures W/O Cc/Mcc,33
+359,Uterine & Adnexa Proc For Non-Malignancy W/O Cc,24
+360,"Vagina, Cervix & Vulva Procedures",24
+361,Laparoscopy  & Incisional Tubal Interruption,24
+362,Endoscopic  Tubal Interruption,24
+363,"D&C, Conization & Radio-Implant,  For Malignancy",24
+364,"D&C, Conization Except For Malignancy",24
+365,Other Female Reproductive  System O.R. Procedures,24
+366,"Malignancy,  Female Reproductive  System W Cc",24
+367,"Malignancy,  Female Reproductive  System W/O Cc",24
+368,Major Esophageal Disorders W Mcc,33
+369,Major Esophageal Disorders W Cc,33
+370,Major Esophageal Disorders W/O Cc/Mcc,33
+371,Major Gastrointestinal Disorders & Peritoneal Infections W Mcc,33
+372,Major Gastrointestinal Disorders & Peritoneal Infections W Cc,33
+373,Major Gastrointestinal Disorders & Peritoneal Infections W/O Cc/Mcc,33
+374,Digestive Malignancy W Mcc,33
+375,Digestive Malignancy W Cc,33
+376,Digestive Malignancy W/O Cc/Mcc,33
+377,G.I. Hemorrhage W Mcc,33
+378,G.I. Hemorrhage W Cc,33
+379,G.I. Hemorrhage W/O Cc/Mcc,33
+380,Complicated Peptic Ulcer W Mcc,33
+381,Complicated Peptic Ulcer W Cc,33
+382,Complicated Peptic Ulcer W/O Cc/Mcc,33
+383,Uncomplicated Peptic Ulcer W Mcc,33
+384,Uncomplicated Peptic Ulcer W/O Mcc,33
+385,Inflammatory Bowel Disease W Mcc,33
+386,Inflammatory Bowel Disease W Cc,33
+387,Inflammatory Bowel Disease W/O Cc/Mcc,33
+388,G.I. Obstruction W Mcc,33
+389,G.I. Obstruction W Cc,33
+390,G.I. Obstruction W/O Cc/Mcc,33
+391,"Esophagitis, Gastroent & Misc Digest Disorders W Mcc",33
+392,"Esophagitis, Gastroent & Misc Digest Disorders W/O Mcc",33
+393,Other Digestive System Diagnoses W Mcc,33
+394,Other Digestive System Diagnoses W Cc,33
+395,Other Digestive System Diagnoses W/O Cc/Mcc,33
+396,Red Blood Cell Disorders Age 0-17,24
+397,Coagulation  Disorders,24
+398,Reticuloendothelial & Immunity Disorders W Cc,24
+399,Reticuloendothelial & Immunity Disorders W/O Cc,24
+400,Lymphoma & Leukemia W Major O.R. Procedure,20
+401,Lymphoma & Non-Acute Leukemia W Other O.R. Proc W Cc,24
+402,Lymphoma & Non-Acute Leukemia W Other O.R. Proc W/O Cc,24
+403,Lymphoma & Non-Acute Leukemia W Cc,24
+404,Lymphoma & Non-Acute Leukemia W/O Cc,24
+405,"Pancreas, Liver & Shunt Procedures W Mcc",33
+406,"Pancreas, Liver & Shunt Procedures W Cc",33
+407,"Pancreas, Liver & Shunt Procedures W/O Cc/Mcc",33
+408,Biliary Tract Proc Except Only Cholecyst W Or W/O C.D.E. W Mcc,33
+409,Biliary Tract Proc Except Only Cholecyst W Or W/O C.D.E. W Cc,33
+410,Biliary Tract Proc Except Only Cholecyst W Or W/O C.D.E. W/O Cc/Mcc,33
+411,Cholecystectomy W C.D.E. W Mcc,33
+412,Cholecystectomy W C.D.E. W Cc,33
+413,Cholecystectomy W C.D.E. W/O Cc/Mcc,33
+414,Cholecystectomy Except By Laparoscope W/O C.D.E. W Mcc,33
+415,Cholecystectomy Except By Laparoscope W/O C.D.E. W Cc,33
+416,Cholecystectomy Except By Laparoscope W/O C.D.E. W/O Cc/Mcc,33
+417,Laparoscopic Cholecystectomy W/O C.D.E. W Mcc,33
+418,Laparoscopic Cholecystectomy W/O C.D.E. W Cc,33
+419,Laparoscopic Cholecystectomy W/O C.D.E. W/O Cc/Mcc,33
+420,Hepatobiliary Diagnostic Procedures W Mcc,33
+421,Hepatobiliary Diagnostic Procedures W Cc,33
+422,Hepatobiliary Diagnostic Procedures W/O Cc/Mcc,33
+423,Other Hepatobiliary Or Pancreas O.R. Procedures W Mcc,33
+424,Other Hepatobiliary Or Pancreas O.R. Procedures W Cc,33
+425,Other Hepatobiliary Or Pancreas O.R. Procedures W/O Cc/Mcc,33
+426,Depressive Neuroses,24
+427,Neuroses Except Depressive,24
+428,Disorders Of Personality  & Impulse Control,24
+429,Organic Disturbances  & Mental Retardation,24
+430,Psychoses,24
+431,Childhood Mental Disorders,24
+432,Cirrhosis & Alcoholic Hepatitis W Mcc,33
+433,Cirrhosis & Alcoholic Hepatitis W Cc,33
+434,Cirrhosis & Alcoholic Hepatitis W/O Cc/Mcc,33
+435,Malignancy Of Hepatobiliary System Or Pancreas W Mcc,33
+436,Malignancy Of Hepatobiliary System Or Pancreas W Cc,33
+437,Malignancy Of Hepatobiliary System Or Pancreas W/O Cc/Mcc,33
+438,Disorders Of Pancreas Except Malignancy W Mcc,33
+439,Disorders Of Pancreas Except Malignancy W Cc,33
+440,Disorders Of Pancreas Except Malignancy W/O Cc/Mcc,33
+441,"Disorders Of Liver Except Malig,Cirr,Alc Hepa W Mcc",33
+442,"Disorders Of Liver Except Malig,Cirr,Alc Hepa W Cc",33
+443,"Disorders Of Liver Except Malig,Cirr,Alc Hepa W/O Cc/Mcc",33
+444,Disorders Of The Biliary Tract W Mcc,33
+445,Disorders Of The Biliary Tract W Cc,33
+446,Disorders Of The Biliary Tract W/O Cc/Mcc,33
+447,Allergic Reactions Age >17,24
+448,Allergic Reactions Age 0-17,24
+449,Poisoning & Toxic Effects Of Drugs Age >17 W Cc,24
+450,Poisoning & Toxic Effects Of Drugs Age >17 W/O Cc,24
+451,Poisoning & Toxic Effects Of Drugs Age 0-17,24
+452,Complications  Of Treatment W Cc,24
+453,Combined Anterior/Posterior Spinal Fusion W Mcc,33
+454,Combined Anterior/Posterior Spinal Fusion W Cc,33
+455,Combined Anterior/Posterior Spinal Fusion W/O Cc/Mcc,33
+456,Spinal Fus Exc Cerv W Spinal Curv/Malig/Infec Or Ext Fus W Mcc,33
+457,Spinal Fus Exc Cerv W Spinal Curv/Malig/Infec Or Ext Fus W Cc,33
+458,Spinal Fus Exc Cerv W Spinal Curv/Malig/Infec Or Ext Fus W/O Cc/Mcc,33
+459,Spinal Fusion Except Cervical W Mcc,33
+460,Spinal Fusion Except Cervical W/O Mcc,33
+461,Bilateral Or Multiple Major Joint Procs Of Lower Extremity W Mcc,33
+462,Bilateral Or Multiple Major Joint Procs Of Lower Extremity W/O Mcc,33
+463,"Wnd Debrid & Skn Grft Exc Hand, For Musculo-Conn Tiss Dis W Mcc",33
+464,"Wnd Debrid & Skn Grft Exc Hand, For Musculo-Conn Tiss Dis W Cc",33
+465,"Wnd Debrid & Skn Grft Exc Hand, For Musculo-Conn Tiss Dis W/O Cc/Mcc",33
+466,Revision Of Hip Or Knee Replacement W Mcc,33
+467,Revision Of Hip Or Knee Replacement W Cc,33
+468,Revision Of Hip Or Knee Replacement W/O Cc/Mcc,33
+469,Major Joint Replacement Or Reattachment Of Lower Extremity W Mcc,33
+470,Major Joint Replacement Or Reattachment Of Lower Extremity W/O Mcc,33
+471,Cervical Spinal Fusion W Mcc,33
+472,Cervical Spinal Fusion W Cc,33
+473,Cervical Spinal Fusion W/O Cc/Mcc,33
+474,Amputation For Musculoskeletal Sys & Conn Tissue Dis W Mcc,33
+475,Amputation For Musculoskeletal Sys & Conn Tissue Dis W Cc,33
+476,Amputation For Musculoskeletal Sys & Conn Tissue Dis W/O Cc/Mcc,33
+477,Biopsies Of Musculoskeletal System & Connective Tissue W Mcc,33
+478,Biopsies Of Musculoskeletal System & Connective Tissue W Cc,33
+479,Biopsies Of Musculoskeletal System & Connective Tissue W/O Cc/Mcc,33
+480,Hip & Femur Procedures Except Major Joint W Mcc,33
+481,Hip & Femur Procedures Except Major Joint W Cc,33
+482,Hip & Femur Procedures Except Major Joint W/O Cc/Mcc,33
+483,Major Joint/Limb Reattachment Procedure Of Upper Extremities,33
+484,Major Joint & Limb Reattachment Proc Of Upper Extremity W/O Cc/Mcc,31
+485,Knee Procedures W Pdx Of Infection W Mcc,33
+486,Knee Procedures W Pdx Of Infection W Cc,33
+487,Knee Procedures W Pdx Of Infection W/O Cc/Mcc,33
+488,Knee Procedures W/O Pdx Of Infection W Cc/Mcc,33
+489,Knee Procedures W/O Pdx Of Infection W/O Cc/Mcc,33
+490,Back & Neck Proc Exc Spinal Fusion W Cc/Mcc Or Disc Device/Neurostim,31
+491,Back & Neck Proc Exc Spinal Fusion W/O Cc/Mcc,31
+492,"Lower Extrem & Humer Proc Except Hip,Foot,Femur W Mcc",33
+493,"Lower Extrem & Humer Proc Except Hip,Foot,Femur W Cc",33
+494,"Lower Extrem & Humer Proc Except Hip,Foot,Femur W/O Cc/Mcc",33
+495,Local Excision & Removal Int Fix Devices Exc Hip & Femur W Mcc,33
+496,Local Excision & Removal Int Fix Devices Exc Hip & Femur W Cc,33
+497,Local Excision & Removal Int Fix Devices Exc Hip & Femur W/O Cc/Mcc,33
+498,Local Excision & Removal Int Fix Devices Of Hip & Femur W Cc/Mcc,33
+499,Local Excision & Removal Int Fix Devices Of Hip & Femur W/O Cc/Mcc,33
+500,Soft Tissue Procedures W Mcc,33
+501,Soft Tissue Procedures W Cc,33
+502,Soft Tissue Procedures W/O Cc/Mcc,33
+503,Foot Procedures W Mcc,33
+504,Foot Procedures W Cc,33
+505,Foot Procedures W/O Cc/Mcc,33
+506,Major Thumb Or Joint Procedures,33
+507,Major Shoulder Or Elbow Joint Procedures W Cc/Mcc,33
+508,Major Shoulder Or Elbow Joint Procedures W/O Cc/Mcc,33
+509,Arthroscopy,33
+510,"Shoulder,Elbow Or Forearm Proc,Exc Major Joint Proc W Mcc",33
+511,"Shoulder,Elbow Or Forearm Proc,Exc Major Joint Proc W Cc",33
+512,"Shoulder,Elbow Or Forearm Proc,Exc Major Joint Proc W/O Cc/Mcc",33
+513,"Hand Or Wrist Proc, Except Major Thumb Or Joint Proc W Cc/Mcc",33
+514,"Hand Or Wrist Proc, Except Major Thumb Or Joint Proc W/O Cc/Mcc",33
+515,Other Musculoskelet Sys & Conn Tiss O.R. Proc W Mcc,33
+516,Other Musculoskelet Sys & Conn Tiss O.R. Proc W Cc,33
+517,Other Musculoskelet Sys & Conn Tiss O.R. Proc W/O Cc/Mcc,33
+518,Back & Neck Proc Exc Spinal Fusion W Mcc Or Disc Device/Neurostim,33
+519,Back & Neck Proc Exc Spinal Fusion W Cc,33
+520,Back & Neck Proc Exc Spinal Fusion W/O Cc/Mcc,33
+521,Alcohol/Drug  Abuse Or Dependence  W Cc,24
+522,Alc/Drug Abuse Or Depend W Rehabilitation  Therapy W/O Cc,24
+523,Alc/Drug Abuse Or Depend W/O Rehabilitation  Therapy W/O Cc,24
+524,Transient Ischemia,24
+525,Other Heart Assist System Implant,24
+526,Percutneous Cardiovasular Proc W Drug Eluting Stent W Ami,22
+527,Percutneous Cardiovasular Proc W Drug Eluting Stent W/O Ami,22
+528,Intracranial  Vascular Proc W Pdx Hemorrhage,24
+529,Ventricular  Shunt Procedures  W Cc,24
+530,Ventricular  Shunt Procedures  W/O Cc,24
+531,Spinal Procedures  W Cc,24
+532,Spinal Procedures  W/O Cc,24
+533,Fractures Of Femur W Mcc,33
+534,Fractures Of Femur W/O Mcc,33
+535,Fractures Of Hip & Pelvis W Mcc,33
+536,Fractures Of Hip & Pelvis W/O Mcc,33
+537,"Sprains, Strains, & Dislocations Of Hip, Pelvis & Thigh W Cc/Mcc",33
+538,"Sprains, Strains, & Dislocations Of Hip, Pelvis & Thigh W/O Cc/Mcc",33
+539,Osteomyelitis W Mcc,33
+540,Osteomyelitis W Cc,33
+541,Osteomyelitis W/O Cc/Mcc,33
+542,Pathological Fractures & Musculoskelet & Conn Tiss Malig W Mcc,33
+543,Pathological Fractures & Musculoskelet & Conn Tiss Malig W Cc,33
+544,Pathological Fractures & Musculoskelet & Conn Tiss Malig W/O Cc/Mcc,33
+545,Connective Tissue Disorders W Mcc,33
+546,Connective Tissue Disorders W Cc,33
+547,Connective Tissue Disorders W/O Cc/Mcc,33
+548,Septic Arthritis W Mcc,33
+549,Septic Arthritis W Cc,33
+550,Septic Arthritis W/O Cc/Mcc,33
+551,Medical Back Problems W Mcc,33
+552,Medical Back Problems W/O Mcc,33
+553,Bone Diseases & Arthropathies W Mcc,33
+554,Bone Diseases & Arthropathies W/O Mcc,33
+555,Signs & Symptoms Of Musculoskeletal System & Conn Tissue W Mcc,33
+556,Signs & Symptoms Of Musculoskeletal System & Conn Tissue W/O Mcc,33
+557,"Tendonitis, Myositis & Bursitis W Mcc",33
+558,"Tendonitis, Myositis & Bursitis W/O Mcc",33
+559,"Aftercare, Musculoskeletal System & Connective Tissue W Mcc",33
+560,"Aftercare, Musculoskeletal System & Connective Tissue W Cc",33
+561,"Aftercare, Musculoskeletal System & Connective Tissue W/O Cc/Mcc",33
+562,"Fx, Sprn, Strn & Disl Except Femur, Hip, Pelvis & Thigh W Mcc",33
+563,"Fx, Sprn, Strn & Disl Except Femur, Hip, Pelvis & Thigh W/O Mcc",33
+564,Other Musculoskeletal Sys & Connective Tissue Diagnoses W Mcc,33
+565,Other Musculoskeletal Sys & Connective Tissue Diagnoses W Cc,33
+566,Other Musculoskeletal Sys & Connective Tissue Diagnoses W/O Cc/Mcc,33
+567,"Stomach, Esophageal  & Duodenal Proc Age > 17 W Cc W Major Gi Dx",24
+568,"Stomach, Esophageal  & Duodenal Procedures  Proc Age > 17 W Cc W/O Major Gi Dx",24
+569,Major Small & Large Bowel Procedures  W Cc W Major Gi Dx,24
+570,Skin Debridement W Mcc,33
+571,Skin Debridement W Cc,33
+572,Skin Debridement W/O Cc/Mcc,33
+573,Skin Graft For Skin Ulcer Or Cellulitis W Mcc,33
+574,Skin Graft For Skin Ulcer Or Cellulitis W Cc,33
+575,Skin Graft For Skin Ulcer Or Cellulitis W/O Cc/Mcc,33
+576,Skin Graft Exc For Skin Ulcer Or Cellulitis W Mcc,33
+577,Skin Graft Exc For Skin Ulcer Or Cellulitis W Cc,33
+578,Skin Graft Exc For Skin Ulcer Or Cellulitis W/O Cc/Mcc,33
+579,"Other Skin, Subcut Tiss & Breast Proc W Mcc",33
+580,"Other Skin, Subcut Tiss & Breast Proc W Cc",33
+581,"Other Skin, Subcut Tiss & Breast Proc W/O Cc/Mcc",33
+582,Mastectomy For Malignancy W Cc/Mcc,33
+583,Mastectomy For Malignancy W/O Cc/Mcc,33
+584,"Breast Biopsy, Local Excision & Other Breast Procedures W Cc/Mcc",33
+585,"Breast Biopsy, Local Excision & Other Breast Procedures W/O Cc/Mcc",33
+592,Skin Ulcers W Mcc,33
+593,Skin Ulcers W Cc,33
+594,Skin Ulcers W/O Cc/Mcc,33
+595,Major Skin Disorders W Mcc,33
+596,Major Skin Disorders W/O Mcc,33
+597,Malignant Breast Disorders W Mcc,33
+598,Malignant Breast Disorders W Cc,33
+599,Malignant Breast Disorders W/O Cc/Mcc,33
+600,Non-Malignant Breast Disorders W Cc/Mcc,33
+601,Non-Malignant Breast Disorders W/O Cc/Mcc,33
+602,Cellulitis W Mcc,33
+603,Cellulitis W/O Mcc,33
+604,"Trauma To The Skin, Subcut Tiss & Breast W Mcc",33
+605,"Trauma To The Skin, Subcut Tiss & Breast W/O Mcc",33
+606,Minor Skin Disorders W Mcc,33
+607,Minor Skin Disorders W/O Mcc,33
+614,Adrenal & Pituitary Procedures W Cc/Mcc,33
+615,Adrenal & Pituitary Procedures W/O Cc/Mcc,33
+616,"Amputat Of Lower Limb For Endocrine,Nutrit,& Metabol Dis W Mcc",33
+617,"Amputat Of Lower Limb For Endocrine,Nutrit,& Metabol Dis W Cc",33
+618,"Amputat Of Lower Limb For Endocrine,Nutrit,& Metabol Dis W/O Cc/Mcc",33
+619,O.R. Procedures For Obesity W Mcc,33
+620,O.R. Procedures For Obesity W Cc,33
+621,O.R. Procedures For Obesity W/O Cc/Mcc,33
+622,"Skin Grafts & Wound Debrid For Endoc, Nutrit & Metab Dis W Mcc",33
+623,"Skin Grafts & Wound Debrid For Endoc, Nutrit & Metab Dis W Cc",33
+624,"Skin Grafts & Wound Debrid For Endoc, Nutrit & Metab Dis W/O Cc/Mcc",33
+625,"Thyroid, Parathyroid & Thyroglossal Procedures W Mcc",33
+626,"Thyroid, Parathyroid & Thyroglossal Procedures W Cc",33
+627,"Thyroid, Parathyroid & Thyroglossal Procedures W/O Cc/Mcc",33
+628,"Other Endocrine, Nutrit & Metab O.R. Proc W Mcc",33
+629,"Other Endocrine, Nutrit & Metab O.R. Proc W Cc",33
+630,"Other Endocrine, Nutrit & Metab O.R. Proc W/O Cc/Mcc",33
+637,Diabetes W Mcc,33
+638,Diabetes W Cc,33
+639,Diabetes W/O Cc/Mcc,33
+640,"Misc Disorders Of Nutrition,Metabolism,Fluids/Electrolytes W Mcc",33
+641,"Misc Disorders Of Nutrition,Metabolism,Fluids/Electrolytes W/O Mcc",33
+642,Inborn And Other Disorders Of Metabolism,33
+643,Endocrine Disorders W Mcc,33
+644,Endocrine Disorders W Cc,33
+645,Endocrine Disorders W/O Cc/Mcc,33
+652,Kidney Transplant,33
+653,Major Bladder Procedures W Mcc,33
+654,Major Bladder Procedures W Cc,33
+655,Major Bladder Procedures W/O Cc/Mcc,33
+656,Kidney & Ureter Procedures For Neoplasm W Mcc,33
+657,Kidney & Ureter Procedures For Neoplasm W Cc,33
+658,Kidney & Ureter Procedures For Neoplasm W/O Cc/Mcc,33
+659,Kidney & Ureter Procedures For Non-Neoplasm W Mcc,33
+660,Kidney & Ureter Procedures For Non-Neoplasm W Cc,33
+661,Kidney & Ureter Procedures For Non-Neoplasm W/O Cc/Mcc,33
+662,Minor Bladder Procedures W Mcc,33
+663,Minor Bladder Procedures W Cc,33
+664,Minor Bladder Procedures W/O Cc/Mcc,33
+665,Prostatectomy W Mcc,33
+666,Prostatectomy W Cc,33
+667,Prostatectomy W/O Cc/Mcc,33
+668,Transurethral Procedures W Mcc,33
+669,Transurethral Procedures W Cc,33
+670,Transurethral Procedures W/O Cc/Mcc,33
+671,Urethral Procedures W Cc/Mcc,33
+672,Urethral Procedures W/O Cc/Mcc,33
+673,Other Kidney & Urinary Tract Procedures W Mcc,33
+674,Other Kidney & Urinary Tract Procedures W Cc,33
+675,Other Kidney & Urinary Tract Procedures W/O Cc/Mcc,33
+682,Renal Failure W Mcc,33
+683,Renal Failure W Cc,33
+684,Renal Failure W/O Cc/Mcc,33
+685,Admit For Renal Dialysis,33
+686,Kidney & Urinary Tract Neoplasms W Mcc,33
+687,Kidney & Urinary Tract Neoplasms W Cc,33
+688,Kidney & Urinary Tract Neoplasms W/O Cc/Mcc,33
+689,Kidney & Urinary Tract Infections W Mcc,33
+690,Kidney & Urinary Tract Infections W/O Mcc,33
+691,Urinary Stones W Esw Lithotripsy W Cc/Mcc,33
+692,Urinary Stones W Esw Lithotripsy W/O Cc/Mcc,33
+693,Urinary Stones W/O Esw Lithotripsy W Mcc,33
+694,Urinary Stones W/O Esw Lithotripsy W/O Mcc,33
+695,Kidney & Urinary Tract Signs & Symptoms W Mcc,33
+696,Kidney & Urinary Tract Signs & Symptoms W/O Mcc,33
+697,Urethral Stricture,33
+698,Other Kidney & Urinary Tract Diagnoses W Mcc,33
+699,Other Kidney & Urinary Tract Diagnoses W Cc,33
+700,Other Kidney & Urinary Tract Diagnoses W/O Cc/Mcc,33
+707,Major Male Pelvic Procedures W Cc/Mcc,33
+708,Major Male Pelvic Procedures W/O Cc/Mcc,33
+709,Penis Procedures W Cc/Mcc,33
+710,Penis Procedures W/O Cc/Mcc,33
+711,Testes Procedures W Cc/Mcc,33
+712,Testes Procedures W/O Cc/Mcc,33
+713,Transurethral Prostatectomy W Cc/Mcc,33
+714,Transurethral Prostatectomy W/O Cc/Mcc,33
+715,Other Male Reproductive System O.R. Proc For Malignancy W Cc/Mcc,33
+716,Other Male Reproductive System O.R. Proc For Malignancy W/O Cc/Mcc,33
+717,Other Male Reproductive System O.R. Proc Exc Malignancy W Cc/Mcc,33
+718,Other Male Reproductive System O.R. Proc Exc Malignancy W/O Cc/Mcc,33
+722,"Malignancy, Male Reproductive System W Mcc",33
+723,"Malignancy, Male Reproductive System W Cc",33
+724,"Malignancy, Male Reproductive System W/O Cc/Mcc",33
+725,Benign Prostatic Hypertrophy W Mcc,33
+726,Benign Prostatic Hypertrophy W/O Mcc,33
+727,Inflammation Of The Male Reproductive System W Mcc,33
+728,Inflammation Of The Male Reproductive System W/O Mcc,33
+729,Other Male Reproductive System Diagnoses W Cc/Mcc,33
+730,Other Male Reproductive System Diagnoses W/O Cc/Mcc,33
+734,"Pelvic Evisceration, Rad Hysterectomy & Rad Vulvectomy W Cc/Mcc",33
+735,"Pelvic Evisceration, Rad Hysterectomy & Rad Vulvectomy W/O Cc/Mcc",33
+736,Uterine & Adnexa Proc For Ovarian Or Adnexal Malignancy W Mcc,33
+737,Uterine & Adnexa Proc For Ovarian Or Adnexal Malignancy W Cc,33
+738,Uterine & Adnexa Proc For Ovarian Or Adnexal Malignancy W/O Cc/Mcc,33
+739,"Uterine,Adnexa Proc For Non-Ovarian/Adnexal Malig W Mcc",33
+740,"Uterine,Adnexa Proc For Non-Ovarian/Adnexal Malig W Cc",33
+741,"Uterine,Adnexa Proc For Non-Ovarian/Adnexal Malig W/O Cc/Mcc",33
+742,Uterine & Adnexa Proc For Non-Malignancy W Cc/Mcc,33
+743,Uterine & Adnexa Proc For Non-Malignancy W/O Cc/Mcc,33
+744,"D&C, Conization, Laparoscopy & Tubal Interruption W Cc/Mcc",33
+745,"D&C, Conization, Laparoscopy & Tubal Interruption W/O Cc/Mcc",33
+746,"Vagina, Cervix & Vulva Procedures W Cc/Mcc",33
+747,"Vagina, Cervix & Vulva Procedures W/O Cc/Mcc",33
+748,Female Reproductive System Reconstructive Procedures,33
+749,Other Female Reproductive System O.R. Procedures W Cc/Mcc,33
+750,Other Female Reproductive System O.R. Procedures W/O Cc/Mcc,33
+754,"Malignancy, Female Reproductive System W Mcc",33
+755,"Malignancy, Female Reproductive System W Cc",33
+756,"Malignancy, Female Reproductive System W/O Cc/Mcc",33
+757,"Infections, Female Reproductive System W Mcc",33
+758,"Infections, Female Reproductive System W Cc",33
+759,"Infections, Female Reproductive System W/O Cc/Mcc",33
+760,Menstrual & Other Female Reproductive System Disorders W Cc/Mcc,33
+761,Menstrual & Other Female Reproductive System Disorders W/O Cc/Mcc,33
+765,Cesarean Section W Cc/Mcc,33
+766,Cesarean Section W/O Cc/Mcc,33
+767,Vaginal Delivery W Sterilization &/Or D&C,33
+768,Vaginal Delivery W O.R. Proc Except Steril &/Or D&C,33
+769,Postpartum & Post Abortion Diagnoses W O.R. Procedure,33
+770,"Abortion W D&C, Aspiration Curettage Or Hysterotomy",33
+774,Vaginal Delivery W Complicating Diagnoses,33
+775,Vaginal Delivery W/O Complicating Diagnoses,33
+776,Postpartum & Post Abortion Diagnoses W/O O.R. Procedure,33
+777,Ectopic Pregnancy,33
+778,Threatened Abortion,33
+779,Abortion W/O D&C,33
+780,False Labor,33
+781,Other Antepartum Diagnoses W Medical Complications,33
+782,Other Antepartum Diagnoses W/O Medical Complications,33
+789,"Neonates, Died Or Transferred To Another Acute Care Facility",33
+790,"Extreme Immaturity Or Respiratory Distress Syndrome, Neonate",33
+791,Prematurity W Major Problems,33
+792,Prematurity W/O Major Problems,33
+793,Full Term Neonate W Major Problems,33
+794,Neonate W Other Significant Problems,33
+795,Normal Newborn,33
+799,Splenectomy W Mcc,33
+800,Splenectomy W Cc,33
+801,Splenectomy W/O Cc/Mcc,33
+802,Other O.R. Proc Of The Blood & Blood Forming Organs W Mcc,33
+803,Other O.R. Proc Of The Blood & Blood Forming Organs W Cc,33
+804,Other O.R. Proc Of The Blood & Blood Forming Organs W/O Cc/Mcc,33
+808,Major Hematol/Immun Diag Exc Sickle Cell Crisis & Coagul W Mcc,33
+809,Major Hematol/Immun Diag Exc Sickle Cell Crisis & Coagul W Cc,33
+810,Major Hematol/Immun Diag Exc Sickle Cell Crisis & Coagul W/O Cc/Mcc,33
+811,Red Blood Cell Disorders W Mcc,33
+812,Red Blood Cell Disorders W/O Mcc,33
+813,Coagulation Disorders,33
+814,Reticuloendothelial & Immunity Disorders W Mcc,33
+815,Reticuloendothelial & Immunity Disorders W Cc,33
+816,Reticuloendothelial & Immunity Disorders W/O Cc/Mcc,33
+820,Lymphoma & Leukemia W Major O.R. Procedure W Mcc,33
+821,Lymphoma & Leukemia W Major O.R. Procedure W Cc,33
+822,Lymphoma & Leukemia W Major O.R. Procedure W/O Cc/Mcc,33
+823,Lymphoma & Non-Acute Leukemia W Other O.R. Proc W Mcc,33
+824,Lymphoma & Non-Acute Leukemia W Other O.R. Proc W Cc,33
+825,Lymphoma & Non-Acute Leukemia W Other O.R. Proc W/O Cc/Mcc,33
+826,Myeloprolif Disord Or Poorly Diff Neopl W Maj O.R. Proc W Mcc,33
+827,Myeloprolif Disord Or Poorly Diff Neopl W Maj O.R. Proc W Cc,33
+828,Myeloprolif Disord Or Poorly Diff Neopl W Maj O.R. Proc W/O Cc/Mcc,33
+829,Myeloprolif Disord Or Poorly Diff Neopl W Other O.R. Proc W Cc/Mcc,33
+830,Myeloprolif Disord Or Poorly Diff Neopl W Other O.R. Proc W/O Cc/Mcc,33
+834,Acute Leukemia W/O Major O.R. Procedure W Mcc,33
+835,Acute Leukemia W/O Major O.R. Procedure W Cc,33
+836,Acute Leukemia W/O Major O.R. Procedure W/O Cc/Mcc,33
+837,Chemo W Acute Leukemia As Sdx Or W High Dose Chemo Agent W Mcc,33
+838,Chemo W Acute Leukemia As Sdx W Cc Or High Dose Chemo Agent,33
+839,Chemo W Acute Leukemia As Sdx W/O Cc/Mcc,33
+840,Lymphoma & Non-Acute Leukemia W Mcc,33
+841,Lymphoma & Non-Acute Leukemia W Cc,33
+842,Lymphoma & Non-Acute Leukemia W/O Cc/Mcc,33
+843,Other Myeloprolif Dis Or Poorly Diff Neopl Diag W Mcc,33
+844,Other Myeloprolif Dis Or Poorly Diff Neopl Diag W Cc,33
+845,Other Myeloprolif Dis Or Poorly Diff Neopl Diag W/O Cc/Mcc,33
+846,Chemotherapy W/O Acute Leukemia As Secondary Diagnosis W Mcc,33
+847,Chemotherapy W/O Acute Leukemia As Secondary Diagnosis W Cc,33
+848,Chemotherapy W/O Acute Leukemia As Secondary Diagnosis W/O Cc/Mcc,33
+849,Radiotherapy,33
+853,Infectious & Parasitic Diseases W O.R. Procedure W Mcc,33
+854,Infectious & Parasitic Diseases W O.R. Procedure W Cc,33
+855,Infectious & Parasitic Diseases W O.R. Procedure W/O Cc/Mcc,33
+856,Postoperative Or Post-Traumatic Infections W O.R. Proc W Mcc,33
+857,Postoperative Or Post-Traumatic Infections W O.R. Proc W Cc,33
+858,Postoperative Or Post-Traumatic Infections W O.R. Proc W/O Cc/Mcc,33
+862,Postoperative & Post-Traumatic Infections W Mcc,33
+863,Postoperative & Post-Traumatic Infections W/O Mcc,33
+864,Fever,33
+865,Viral Illness W Mcc,33
+866,Viral Illness W/O Mcc,33
+867,Other Infectious & Parasitic Diseases Diagnoses W Mcc,33
+868,Other Infectious & Parasitic Diseases Diagnoses W Cc,33
+869,Other Infectious & Parasitic Diseases Diagnoses W/O Cc/Mcc,33
+870,Septicemia Or Severe Sepsis W Mv >96 Hours,33
+871,Septicemia Or Severe Sepsis W/O Mv >96 Hours W Mcc,33
+872,Septicemia Or Severe Sepsis W/O Mv >96 Hours W/O Mcc,33
+876,O.R. Procedure W Principal Diagnoses Of Mental Illness,33
+880,Acute Adjustment Reaction & Psychosocial Dysfunction,33
+881,Depressive Neuroses,33
+882,Neuroses Except Depressive,33
+883,Disorders Of Personality & Impulse Control,33
+884,Organic Disturbances & Mental Retardation,33
+885,Psychoses,33
+886,Behavioral & Developmental Disorders,33
+887,Other Mental Disorder Diagnoses,33
+894,"Alcohol/Drug Abuse Or Dependence, Left Ama",33
+895,Alcohol/Drug Abuse Or Dependence W Rehabilitation Therapy,33
+896,Alcohol/Drug Abuse Or Dependence W/O Rehabilitation Therapy W Mcc,33
+897,Alcohol/Drug Abuse Or Dependence W/O Rehabilitation Therapy W/O Mcc,33
+901,Wound Debridements For Injuries W Mcc,33
+902,Wound Debridements For Injuries W Cc,33
+903,Wound Debridements For Injuries W/O Cc/Mcc,33
+904,Skin Grafts For Injuries W Cc/Mcc,33
+905,Skin Grafts For Injuries W/O Cc/Mcc,33
+906,Hand Procedures For Injuries,33
+907,Other O.R. Procedures For Injuries W Mcc,33
+908,Other O.R. Procedures For Injuries W Cc,33
+909,Other O.R. Procedures For Injuries W/O Cc/Mcc,33
+913,Traumatic Injury W Mcc,33
+914,Traumatic Injury W/O Mcc,33
+915,Allergic Reactions W Mcc,33
+916,Allergic Reactions W/O Mcc,33
+917,Poisoning & Toxic Effects Of Drugs W Mcc,33
+918,Poisoning & Toxic Effects Of Drugs W/O Mcc,33
+919,Complications Of Treatment W Mcc,33
+920,Complications Of Treatment W Cc,33
+921,Complications Of Treatment W/O Cc/Mcc,33
+922,"Other Injury, Poisoning & Toxic Effect Diag W Mcc",33
+923,"Other Injury, Poisoning & Toxic Effect Diag W/O Mcc",33
+927,Extensive Burns Or Full Thickness Burns W Mv >96 Hrs W Skin Graft,33
+928,Full Thickness Burn W Skin Graft Or Inhal Inj W Cc/Mcc,33
+929,Full Thickness Burn W Skin Graft Or Inhal Inj W/O Cc/Mcc,33
+933,Extensive Burns Or Full Thickness Burns W Mv >96 Hrs W/O Skin Graft,33
+934,Full Thickness Burn W/O Skin Grft Or Inhal Inj,33
+935,Non-Extensive Burns,33
+939,O.R. Proc W Diagnoses Of Other Contact W Health Services W Mcc,33
+940,O.R. Proc W Diagnoses Of Other Contact W Health Services W Cc,33
+941,O.R. Proc W Diagnoses Of Other Contact W Health Services W/O Cc/Mcc,33
+945,Rehabilitation W Cc/Mcc,33
+946,Rehabilitation W/O Cc/Mcc,33
+947,Signs & Symptoms W Mcc,33
+948,Signs & Symptoms W/O Mcc,33
+949,Aftercare W Cc/Mcc,33
+950,Aftercare W/O Cc/Mcc,33
+951,Other Factors Influencing Health Status,33
+955,Craniotomy For Multiple Significant Trauma,33
+956,"Limb Reattachment, Hip & Femur Proc For Multiple Significant Trauma",33
+957,Other O.R. Procedures For Multiple Significant Trauma W Mcc,33
+958,Other O.R. Procedures For Multiple Significant Trauma W Cc,33
+959,Other O.R. Procedures For Multiple Significant Trauma W/O Cc/Mcc,33
+963,Other Multiple Significant Trauma W Mcc,33
+964,Other Multiple Significant Trauma W Cc,33
+965,Other Multiple Significant Trauma W/O Cc/Mcc,33
+969,Hiv W Extensive O.R. Procedure W Mcc,33
+970,Hiv W Extensive O.R. Procedure W/O Mcc,33
+974,Hiv W Major Related Condition W Mcc,33
+975,Hiv W Major Related Condition W Cc,33
+976,Hiv W Major Related Condition W/O Cc/Mcc,33
+977,Hiv W Or W/O Other Related Condition,33
+981,Extensive O.R. Procedure Unrelated To Principal Diagnosis W Mcc,33
+982,Extensive O.R. Procedure Unrelated To Principal Diagnosis W Cc,33
+983,Extensive O.R. Procedure Unrelated To Principal Diagnosis W/O Cc/Mcc,33
+984,Prostatic O.R. Procedure Unrelated To Principal Diagnosis W Mcc,33
+985,Prostatic O.R. Procedure Unrelated To Principal Diagnosis W Cc,33
+986,Prostatic O.R. Procedure Unrelated To Principal Diagnosis W/O Cc/Mcc,33
+987,Non-Extensive O.R. Proc Unrelated To Principal Diagnosis W Mcc,33
+988,Non-Extensive O.R. Proc Unrelated To Principal Diagnosis W Cc,33
+989,Non-Extensive O.R. Proc Unrelated To Principal Diagnosis W/O Cc/Mcc,33
+998,Principal Diagnosis Invalid As Discharge Diagnosis,33
+999,Ungroupable,33
