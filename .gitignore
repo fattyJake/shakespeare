@@ -1,0 +1,5 @@
+__pycache__/
+ensemble_*
+indicators_*
+mapping_*
+variables_*
