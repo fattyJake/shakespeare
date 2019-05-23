@@ -1,32 +1,36 @@
-# enid - Deep Learning for Medical Claims
+# shakespeare - Machine Learning for Medical Claims Retrospective Risk Adjustment
 
 ## Summary
 
-**enid** is a Python package for training and deploying adverse event prediction deep learning model based on medical claims supported by [Inovalon Inc.](https://www.inovalon.com/) The package includes the entire pipeline for vectorizing patient claim codes, claim code embedding training, predictive model training and deployment, as well as interpretation of the model. The models leverage wide range of medical claims, including all diagnoses and procedures as International Classification of Diseases (ICD) version 9/10 diagnosis/procedures, Current Procedural Terminology (CPT) and Healthcare Common Procedure Coding System (HCPCS); also medications as National Drug Code (NDC); as well as lab tests and results as Logical Observation Identifiers Names and Codes (LOINC).
+**shakespeare** is a Python package for for detecting the likely conditions of a patient based on medical codes attached to that patient through the use of machine learning for risk adjustment purpose supported by [Inovalon Inc.](https://www.inovalon.com/) The package includes the entire pipelines for training and deploying, along with utilities for fetching data from Inovalon database. The models leverage wide range of medical claims, including all diagnoses and procedures as International Classification of Diseases (ICD) version 9/10 diagnosis/procedures, Current Procedural Terminology (CPT) and Healthcare Common Procedure Coding System (HCPCS), as well as medications as National Drug Code (NDC).
 
-**enid** provides stable Python APIs based on [Tensorflow](https://www.tensorflow.org/) enabling both CPU and GPU usage. Keep up to date with version releases and issue reporting by
+**shakespeare** provides stable Python APIs based on [XGBoost](https://xgboost.readthedocs.io/en/latest/index.html). Keep up to date with version releases and issue reporting by
 emailing to
-[ywang2@inovalon.com](ywang2@inovalon.com), [mmcclellan@inovalon.com](mmcclellan@inovalon.com) or [wkinsman@inovalon.com](wkinsman@inovalon.com).
+[ywang2@inovalon.com](ywang2@inovalon.com) or [wkinsman@inovalon.com](wkinsman@inovalon.com).
 
 ## Installation
 
-To download built wheel files:
+Before installing **shakespeare**, please install XGBoost first (highly recommend version 0.72) to avoid potential compile problems. Follow the [installation instruction](https://xgboost.readthedocs.io/en/latest/build.html) of offical guildline.
+
+To download built **shakespeare** wheel files:
 
 | Build Type      | Status | Artifacts |
 | ---             | ---    | ---       |
 | **Linux**   | [![Status](imgs/linux-build.svg)]() | [Py3 wheel](https://www.inovalon.com/) |
 | **Windows** | [![Status](imgs/win-build.svg)]() | [Py3 wheel](https://www.inovalon.com/) |
 
+Please
+
 To install on Linux machine:
 
 ```
-$ pip install enid-1.0.0-py3-manylinux1_x86_64.whl
+$ pip install shakespeare-2.5.0-py3-manylinux1_x86_64.whl
 ```
 
 To install on Windows machine:
 
 ```
-$ pip install enid-1.0.0-py3-win_amd64.whl
+$ pip install shakespeare-2.5.0-py3-win_amd64.whl
 ```
 
 Or install from source
@@ -37,205 +41,212 @@ $ python setup.py install
 
 ## API Documentation
 
-### 1. data_helper
-
-This module contains the vectorizer prior feeding data to any models.
-
-#### class HierarchicalVectorizer
+### 1. deploy
 
 ```python
-enid.data_helper.HierarchicalVectorizer()
+shakespeare.detect(payer,server,memberID_list=None,date_start=None,date_end=None,file_date_lmt=None,
+                   mem_date_start=None,mem_date_end=None,model=63,auto_update=False,threshold=0,
+                   output_path=None,get_indicators=False,top_n_indicator=5):
 ```
 
-```HierarchicalVectorizer``` aims to vectorize claim data into two-level event containers for further use. Specifically, output the time deltas of all encounters and index of each claim codes according to our fixed indexing dictionary. Once initialized, it contains \_\_call\_\_ function to take a dictionary (JSON) with patient's encounter date and codes as input, and return two numpy arrays:
+```deploy``` main functions detects the HCCs patients may have, and supporting evidence, given a batch of patient's info.
 
 ##### Parameters
-```seq``` : JSON (dict) type object with format "YYYY-mm-dd": ["code_type-code"]. e.g.
-```json
-{
-    "2015-01-05": [
-        "CPT-97112",
-        "ICD9DX-7813",
-        "CPT-97530",
-        "POS-11"
-    ],
-    ...
-    "2016-10-11": [
-        "REVENUE-0510",
-        "ICD10DX-Z23",
-        "CPT-90460"
-    ]
-}
-```
-
-```max_sequence_length``` : int, the fixed padding number of encounters. If the number of encounters is larger than max\_sequence\_length, only use the latest max\_sequence\_length; if the number of encounters is smaller than max\_sequence\_length, fill the earlier sequence with null index.
-
-```max_token_length``` : int, the fixed padding number within each encounter. If the number of claim codes is larger than max\_token\_length, randomly sample max\_token\_length, number of codes; if the number of encounters is smaller than max\_token\_length, fill the later sequence with null index.
+* ```payer``` : str. Name of payer table (e.g. 'CD_HEALTHFIRST')
+* ```server``` : str. CARA server on which the payer is located ('CARABWDB03')
+* ```memberID_list``` : list, optional (default: None). List of memberIDs (e.g. [1120565]); if None, get results from all members under payer
+* ```date_start``` : str, optional (default: None). String as 'YYYY-MM-DD' to get claims data from
+* ```date_end``` : str, optional (default: None). String as 'YYYY-MM-DD' to get claims data to
+* ```file_date_lmt``` : str, optional (default: None). String as 'YYYY-MM-DD' indicating the latest file date limit of patient codes, generally at the half of one year
+* ```mem_date_start``` : str, optional (default: None). As 'YYYY-MM-DD', starting date to filter memberIDs by dateInserted
+* ```mem_date_end``` : str, optional (default: None). As 'YYYY-MM-DD', ending date to filter memberIDs by dateInserted
+* ```model``` : int, optional (default: 63). An integer of model version ID in ```MPBWDB1.CARA2_Controller.dbo.ModelVersions```; note this package only support CDPS, CMS and HHS
+* ```auto_update``` : boolean, optional (default: False). If True, and no matching model pickled, it will call `update` function first
+* ```threshold``` : float, optional (default: 0). A float between 0 and 1 for filtering output confidence above it
+* ```output_path``` : str, optional (default: None). If not None, provided with the path of output EXCEL sheet to store HCC probs, financial values for all member list
+* ```get_indicators``` : boolean, optional (default: False). If False, only return probabilities for each HCC each member; if True, add supporting evidences of each member to each HCC
+* ```top_n_indicator``` : int, optional (default: 5). How many indicators to output for each member each HCC
     
 ##### Return
 
-```T``` : numpy array, shape (```max_sequence_length```,). Standardized time deltas between each two encounters
-
-```X```: numpy array, shape (```max_sequence_length```, ```max_token_length```). The index of each claim codes based on dictionary
+```member_condition```: list of tuples. As format of ```[(memberID, HCC, prob, tp_flag)]``` or ```[(memberID, HCC, prob, tp_flag, top_n_codes, top_n_encounter_id, top_n_coefficient)]```
 
 ##### Examples
 ```python
->>> from enid.vectorizer import HierarchicalVectorizer
->>> vec = HierarchicalVectorizer()
->>> seq = {"2015-01-05": ["CPT-97112", "ICD9DX-7813",  "CPT-97530",  "POS-11"],
-           ...
-           "2016-10-11": ["REVENUE-0510", "ICD10DX-Z23", "CPT-90460" ]}
->>> vec(seq, 30, 20)[0]
-array([17,  1,  2,  1,  1,  1,  1,  1,  1,  1,  3,  2,  1,  1,  1,  3,  3,
-        1,  3,  1,  1,  5,  1,  2,  4,  7,  1,  8,  2,  3]
-
->>> vec(seq, 30, 20)[1]
-array([[  423,    50, 64070, 64070, 64070, 64070, 64070, 64070, 64070,
-        64070, 64070, 64070, 64070, 64070, 64070, 64070, 64070, 64070,
-        64070, 64070],
-       ...
-       [ 2829,  2214,   546,     4,     0,   329,   142, 64070, 64070,
-        64070, 64070, 64070, 64070, 64070, 64070, 64070, 64070, 64070,
-        64070, 64070]])
+>>> from shakespeare import detect
+>>> detect(payer="CD_GATEWAY", server="CARABWDB06", date_start='2017-01-01', date_end='2017-12-31', threshold=0.1, top_n_indicator=5, get_indicators=True)
+    [(1874863, 'HCC100', 0.6826, False,
+      ['ICD10-I6789', 'CPT-70450', 'CPT-70551', 'ICD10-I679', 'ICD10-R0989'],
+      [260407786, 238479950, 261261633, 263391390, 260296947],
+      [0.014031, 0.011159, 0.008204, 0.003258, 0.002997]),
+     ...
+     (2002971, 'HCC114', 0.1319, False,
+      ['ICD10-J189', 'CPT-99291', 'CPT-99232', 'ICD10-J90', 'CPT-99223'],
+      [265224944, 265150570, 265367997, 264964282, 264567584],
+      [0.031377, 0.009218, 0.009105, 0.0043, 0.003366])]
 ```
 
-### 2. claim2vec
-
-This module contains the training module of medical claim embedding, mimics Word2Vec skipgram. Unlike Word2Vec assuming nearest token are related, due to claims are only attached with date but no timestamp, the model assume all the claims within a day are related.
-
-#### class Claim2Vec
+### 2. update
 
 ```python
-enid.claim2vec.Claim2Vec(dictionary, batch_size=128, embedding_size=256, learning_rate=0.1, decay_steps=50000,
-                         decay_rate=0.95, num_sampled=64, valid_size=16)
+shakespeare.update(model, year_of_service)
 ```
+
+Since CARA use different ICD-HCC mappings at different service year, this function is for updating mappings, variable spaces and XGBoost models for all lines of business.
 
 ##### Parameters
-* ```dictionary``` : dict. Fixed indexing of embeddings with format of {index int: claim str}
-* ```batch_size``` : int, optional (default 128).Number of tokens of each training batch
-* ```embedding_size``` : int, optional (default 256). Dimentionality of embedding vectors
-* ```learning_rate``` : float, optional (default 0.1). Initial leaerning rate of gradient descent optimizer
-* ```decay_steps``` : int, optional (default 50000). Step frequency to decay the learning rate. e.g. if 5000, model will reduce learning rate by decay_rate every 5000 trained batches
-* ```decay_rate``` : float, optional (default 0.95). Percentage of learning rate decay rate
-* ```num_sampled``` : int, optional (default 64). Size of negative samling
-* ```valid_size``` : float, optional (default 16). Random set of words to evaluate similarity on
-
-##### Methods
-
-###### _train_
-
-```python
-train(data, num_epoch, log_dir, evaluate_every=2000)
-```
-
-Parameters
-* ```data``` : list. Training index data with format of ```[[1,573,203], [16389,8792], ... [0,4,8394,20094]]```; the index should be consistent with dictionary
-* ```num_epoch``` : int. Number of epoch to go over whole dataset
-* ```log_dir``` : str. Directory of model logs
-* ```evaluate_every``` : int, optional (default: 2000). How many steps the model evluates loss (evaluate sampled validation set on every evaluate_every * 10 steps)
+* ```model``` : int. An integer of model version ID in ```MPBWDB1.CARA2_Controller.dbo.ModelVersions```; note this package only support CDPS, CMS and HHS
+* ```year_of_service``` : int. A intiger of the year of service for training data retrieval purpose
 
 ##### Examples
 ```python
->>> from enid.claim2vec import Claim2Vec
->>> c2v = Claim2Vec(d)
->>> dataset = [[1,573,203], [16389,8792], ... [0,4,8394,20094]]
->>> c2v.train(dataset, 5, 'c2v_logs', 5000)
+>>> from shakespeare import update
+>>> update(63, 2018)
+############################## Training New Model 63 ##############################
+Fetching training dateset...
+Time elapase: 0:11:00.040693
+
+Updating new mapping table...
+Time elapase: 0:00:00.249601
+
+Updating new variable spaces...
+Time elapase: 0:00:12.090078
+
+Updating new machine learning models...
+Training HCC1
+Training HCC10
+...
+Training HCC96
+Training HCC99
+Time elapase: 05:08:24.738294
+
+Updating new global supporting evidences...
+Time elapase: 0:00:06.009842
+############################ Finished Training Model 63 ###########################
 ```
 
-### 3. than_clf
-
-This module defines the framework of Time-Aware Hierarchical Attention Model, along with training and deployment process. It uses an embedding layer, followed by a token-level bi-LSTM with attention, then a sentence-level time-aware-LSTM with attention and then sofrmax layer:
-
-<p align="center">
-  <img src="imgs/than.png" class="center" height="700" />
-</p>
-
-#### class T_HAN
+### 3. delete
 
 ```
-enid.than_clf.T_HAN(mode, **kwargs)
+shakespeare.delete(model)
 ```
+
+Main funtion for deleting old models to free up disk space.
 
 ##### Parameters
 
-* ```mode``` : str. ```'train'``` or ```'deploy'``` mode
-
-##### Train Mode Parameters (if you choose ```'train'``` mode, please provide:)
-
-* ```max_sequence_length``` : int. The fixed padding number of encounters.
-* ```max_sentence_length``` : int. The fixed padding number of claims each encounter
-* ```num_classes``` : int. The number of target classes
-* ```hidden_size``` : int. The number of LSTM units
-* ```pretrain_embedding``` : 2-D numpy array (```vocab_size```, ```embedding_size```). Random initialized embedding matrix
-* ```learning_rate``` : float. Initial learning rate for Adam Optimizer
-* ```decay_steps``` : int. Step frequency to decay the learning rate. e.g. if 5000, model will reduce learning rate by decay_rate every 5000 trained batches
-* ```decay_rate``` : float. Percentage of learning rate decay rate
-* ```dropout_keep_prob``` : float. Percentage of neurons to keep from dropout regularization each layer
-* ```l2_reg_lambda``` : float, optional (default: .0). L2 regularization lambda for fully-connected layer to prevent potential overfitting
-* ```objective``` : str, optional (default: ```'ce'```). The objective function (loss) model trains on; if 'ce', use cross-entropy, if 'auc', use AUROC as objective
-* ```initializer``` : tf tensor initializer object, optional (default: ```tf.orthogonal_initializer()```). Initializer for fully connected layer weights
-
-##### Deploy Mode Parameters (if you choose ```'deploy'``` mode, please provide:)
-
-* ```model_path``` : str. The path to store the model
-* ```step``` : int, optional (defult ```None```). If not None, load specific model with given step
-
-##### Methods
-
-###### _train_
-
-```python
-train(t_train, x_train, y_train, dev_sample_percentage, num_epochs, batch_size, evaluate_every, model_path, debug=False)
-```
-
-Parameters
-
-* ```t_train``` : 2-D numpy array, shape (```num_samples```, ```max_sequence_length```). Time deltas of all samples and encounters
-* ```x_train``` : 3-D numpy array, shape (```num_samples```,  ```max_sequence_length```, ```max_sentence_length```). Index of all of all samples, encounters and claims
-* ```y_train``` : 2-D numpy array, shape (```num_samples```, ```num_classes```). Training ground truth
-* ```dev_sample_percentage``` : float. Percentage of ```x_train``` seperated from training process and used for validation
-* ```num_epochs``` : int. Mumber of epochs of training, one epoch means finishing training entire training set
-* ```batch_size``` : int. Size of training batches, this won't affect training speed significantly; smaller batch leads to more regularization
-* ```evaluate_every``` : int. Mumber of steps to perform a evaluation on development (validation) set and print out info
-* ```model_path``` : str. The path to store the model
-
-###### _deploy_
-
-```python
-deploy(t_test, x_test)
-```
-
-Parameters
-
-* ```t_test``` : 2-D numpy array, shape (```num_samples```, ```max_sequence_length```). Time deltas of all samples and encounters
-* ```x_test``` : 3-D numpy array, shape (```num_samples```,  ```max_sequence_length```, ```max_sentence_length```). Index of all of all samples, encounters and claims
+* ```model``` : int. An integer of model version ID in MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only support CDPS, CMS and HHS
 
 ##### Examples
 ```python
->>> from enid.than_clf import T_HAN
->>> model_1 = T_HAN('train', max_sequence_length=50, max_sentence_length=20,
-        hidden_size=128, num_classes=2, pretrain_embedding=emb,
-        learning_rate=0.05, decay_steps=5000, decay_rate=0.9,
-        dropout_keep_prob=0.8, l2_reg_lambda=0.0, objective='ce')
->>> model_1.train(t_train=T, x_train=X,
-                y_train=y, dev_sample_percentage=0.01,
-                num_epochs=20, batch_size=64,
-                evaluate_every=100, model_path='./model/')
-
->>> model_2 = T_HAN('deploy', model_path='./model')
->>> model_2.deploy(t_test=T_test, x_test=X_test)
-array([9.9515426e-01,
-       4.6948572e-03,
-       3.1738445e-02,,
-       ...,
-       9.9895418e-01,
-       5.6348788e-04,
-       9.9940193e-01], dtype=float32)
+>>> from shakespeare import delete
+>>> delete(63)
 ```
 
-### 4. visualization
+### 4. fetch_db
+
+This module contains tools for interactive with Inovalon CARA databases.
+
+#### function batch_member_codes
+
+```python
+shakespeare.fetch_db.batch_member_codes(payer='CD_HEALTHFIRST', server='CARABWDB03', memberIDs=None,
+                                        date_start=None, date_end=None, file_date_lmt=None,
+                                        mem_date_start=None, mem_date_end=None, model=63, get_client_id=True)
+```
+
+Retrieve a list of members' claim codes.
+
+##### Parameters
+
+* ```payer``` : str. Name of payer table (e.g. 'CD_HEALTHFIRST')
+* ```server``` : str. CARA server on which the payer is located ('CARABWDB03')
+* ```memberID_list``` : list, optional (default: None). List of memberIDs (e.g. [1120565]); if None, get results from all members under payer
+* ```date_start``` : str, optional (default: None). String as 'YYYY-MM-DD' to get claims data from
+* ```date_end``` : str, optional (default: None). String as 'YYYY-MM-DD' to get claims data to
+* ```file_date_lmt``` : str, optional (default: None). String as 'YYYY-MM-DD' indicating the latest file date limit of patient codes, generally at the half of one year
+* ```mem_date_start``` : str, optional (default: None). As 'YYYY-MM-DD', starting date to filter memberIDs by dateInserted
+* ```mem_date_end``` : str, optional (default: None). As 'YYYY-MM-DD', ending date to filter memberIDs by dateInserted
+* ```model``` : int, optional (default: 63). An integer of model version ID in ```MPBWDB1.CARA2_Controller.dbo.ModelVersions```; note this package only support CDPS, CMS and HHS
+* ```get_client_id``` : boolean, optional (default: True). Whether return member client IDs
+
+##### Return
+
+```member_codes```: list of tuples. As ```(mem_id, mem_clientMemberID, encounter_id, code)```
+
+##### Examples
+```python
+>>> from shakespeare.fetch_db import batch_member_codes
+>>> batch_member_codes("CD_HEALTHFIRST", memberIDs=[1120565])
+[(1120565, '130008347', 'ICD9-4011'),
+ (1120565, '130008347', 'CPT-73562'),
+ ...
+ (1120565, '130008347', 'CPT-92012'),
+ (1120565, '130008347', 'ICD9-78659')]
+```
+
+### 5. vectorizers
+
+This module contains tools for patient vectorizing.
+
+#### function build_member_input_vector
+
+```python
+shakespeare.vectorizers.build_member_input_vector(member_codes_found, variables)
+```
+
+Convert patient claim codes into sparse vector
+
+##### Parameters
+
+* ```member_codes_found``` : list or iterable. List of codes for one member
+* ```varibles``` : list. Codes that are variables as "codetype-evidencecode"
+
+##### Return
+
+```member_vector```: csr_matrix. Sparse row vector of corresponding codes
+
+##### Examples
+```python
+>>> from shakespeare.vectorizers import build_member_input_vector
+>>> build_member_input_vector(['ICD10-I10', 'CPT-99213'], variables)
+<1x9974 sparse matrix of type '<class 'numpy.int32'>'
+    with 1 stored elements in Compressed Sparse Row format>
+```
+
+### 6. visualization
 
 This module contains tools for plot classification model performance.
+
+#### function plot_coefficients
+
+```python
+shakespeare.visualizations.plot_coefficients(classifier,variables,name,n=50,bottom=False,save_name=None)
+```
+
+##### Parameters
+
+* ```classifier``` : XGBClassifier or CalibratedClassifierCV. The classifier to use in the ensemble
+* ```variables``` : list. Variable space to map plot axis
+* ```name``` : str. HCC name of the coefficient
+* ```n``` : int, optional (default: 50). Returns top/bottom n variables
+* ```bottom``` : boolean, optional (default: False). Returns bottom n variables
+* ```save_name``` : str, optional (default: None). The path of output image; if provided, save the plot to disk
+
+##### Returns
+
+Bar plot with feature importance of the model.
+
+##### Examples
+```python
+>>> from shakespeare.visualizations import plot_coefficients
+>>> from xgboost import XGBClassifier
+>>> xgb = XGBClassifier().fit(X_train, y_train)
+>>> plot_coefficients(xgb, variables, name='HCC22', n=100)
+```
+<p align="center">
+  <img src="imgs/63/HCC22_coef.png" class="center" height="600"/>
+</p>
 
 #### function plot_performance
 
@@ -256,19 +267,19 @@ enid.visualizations.plot_performance(out_true, out_pred, save_name=None)
 
 ##### Examples
 ```python
->>> from enid.visualizations import plot_performance
+>>> from shakespeare.visualizations import plot_performance
 >>> y_true = [0, 1, ... 1, 0]
 >>> y_prob = [0.0000342, 0.99999974, ... 0.84367323, 0.5400342]
->>> plot_performance(y_true, y_prob, None)
+>>> plot_performance(y_true, y_prob, "HCC19.png")
 ```
 <p align="center">
-  <img src="imgs/performance.png" class="center" height="200"/>
+  <img src="imgs/63/HCC19.png" class="center" height="170"/>
 </p>
 
 #### function plot_comparison
 
 ```python
-enid.visualizations.plot_comparison(y_true, y_score_1, y_score_2, name_1, name_2, thre=0.5, save_name=None)
+shakespeare.visualizations.plot_comparison(y_true, y_score_1, y_score_2, name_1, name_2, thre=0.5, save_name=None)
 ```
 
 ##### Parameters
@@ -282,49 +293,16 @@ enid.visualizations.plot_comparison(y_true, y_score_1, y_score_2, name_1, name_2
 
 ##### Examples
 ```python
->>> from enid.visualizations import plot_comparison
+>>> from shakespeare.visualizations import plot_comparison
 >>> y_true = [0, 1, ... 1, 0]
 >>> y_prob_1 = [0.0000342, 0.99999974, ... 0.84367323, 0.5400342]
 >>> y_prob_2 = [0.0000093, 0.99999742, ... 0.99999618, 0.2400342]
->>> plot_comparison(y_true, y_prob_1, y_prob_2, 'THAN', 'XGBoost')
-```
-<p align="center">
-  <img src="imgs/compare.png" class="center" height="200"/>
-</p>
-
-### 5. interpreter
-
-This module contains tools to visualize timelines of samples by interpreting models.
-
-#### function monitor_interpreter
-
-```python
-enid.interpreter.monitor_interpreter(data, model_path, step=None, most_recent=20, save_name=None)
-```
-
-##### Parameters
-* ```data``` : dict. One data sample with format {time: [codes]}, consistent with input for HierarchicalVectorizer.
-* ```model_path``` : str. The path to store the model
-* ```step``` : int, optional (defult None). If not None, load specific model with given step
-* ```most_recent``` : int, optional (default 20). If provided, only plot most_recent timestamps
-* ```save_name``` : str, optional (default None). The HTML file path to output interactive visualization; if None, just display
-
-##### Notes
-This tools is a patient medical history supervision system with visualizations to highlight those encounters and medical visits that significantly change the risk scores. In other words, the model is re-applied on patient at each new encounter and we are able to monitor "spikes" caused by certain diagnosis, procedures or medicines.
-
-##### Examples
-```python
->>> from enid.interpreter import monitor_interpreter
->>> data = {"2015-01-05": ["CPT-97112", "ICD9DX-7813", ...  "CPT-97530",  "POS-11"],
-            ...
-            "2016-12-18": ["CPT-3078F", "ICD10DX-I10", ... "CPT-99213" ]}
->>> monitor_interpreter(data, model_path="./model", most_recent=30)
+>>> plot_comparison(y_true, y_prob_1, y_prob_2, 'SVC', 'XGBoost')
 ```
 
 <p align="center">
-  <img src="imgs/monitor.gif" class="center" />
+  <img src="imgs/lg_vs_xgb.png" class="center" height="200"/>
 </p>
-
 
 ## For more information
 
@@ -333,4 +311,4 @@ This tools is a patient medical history supervision system with visualizations t
 
 ## License
 
-[Apache License 2.0](LICENSE)
+[GPL License 3.0](LICENSE)

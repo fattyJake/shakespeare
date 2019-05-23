@@ -278,18 +278,31 @@ def plot_comparison(y_true,y_score_1,y_score_2,name_1,name_2,thre=0.5,save_name=
     >>> plot_comparison(y_true, y_prob_1, y_prob_2, 'SVC', 'XGBoost')
     """
     with plt.style.context('ggplot'):
-        fig = plt.figure(1,figsize=(5,3))
+        fig = plt.figure(1,figsize=(9,3))
 
+        plt.subplot(121)
+        fpr1, tpr1, _ = roc_curve(y_true, y_score_1)
+        fpr2, tpr2, _ = roc_curve(y_true, y_score_2)
+        plt.plot(fpr1, tpr1, color='dodgerblue', lw=2, label=f'{name_1} (AUC = %0.3f)' % roc_auc_score(y_true, y_score_1))
+        plt.plot(fpr2, tpr2, color='seagreen',   lw=2, label=f'{name_2} (AUC = %0.3f)' % roc_auc_score(y_true, y_score_2))
+        plt.title('ROC Compare')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('Recall')
+        plt.ylim([0.0, 1.05])
+        plt.xlim([0.0, 1.0])
+        plt.legend()
+
+        plt.subplot(122)
         precision1,recall1,thresholds1 = precision_recall_curve(y_true, y_score_1)
         precision2,recall2,thresholds2 = precision_recall_curve(y_true, y_score_2)
         plt.step(recall1, precision1, label=name_1, color='dodgerblue', alpha=0.5,where='post')
         plt.step(recall2, precision2, label=name_2, color='seagreen', alpha=0.5,where='post')
         ppoint1 = precision1[:-1][np.argmin(np.abs(thresholds1 - thre))]
         rpoint1 = recall1[:-1][np.argmin(np.abs(thresholds1 - thre))]
-        plt.plot(rpoint1, ppoint1, 'bo', markersize=7, label='thre'+str(thre))
+        plt.plot(rpoint1, ppoint1, color='dodgerblue', marker='o', markersize=7, label='thre'+str(thre))
         ppoint2 = precision2[:-1][np.argmin(np.abs(thresholds2 - thre))]
         rpoint2 = recall2[:-1][np.argmin(np.abs(thresholds2 - thre))]
-        plt.plot(rpoint2, ppoint2, 'ro', markersize=7, label='thre'+str(thre))
+        plt.plot(rpoint2, ppoint2, color='seagreen', marker='o', markersize=7, label='thre'+str(thre))
         plt.title('PR Compare')
         plt.xlabel('Recall')
         plt.ylabel('Precision')
