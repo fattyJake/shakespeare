@@ -74,7 +74,10 @@ shakespeare.detect(payer,server,memberID_list=None,date_start=None,date_end=None
 ##### Examples
 ```python
 >>> from shakespeare import detect
->>> detect(payer="CD_GATEWAY", server="CARABWDB06", date_start='2017-01-01', date_end='2017-12-31', threshold=0.1, top_n_indicator=5, get_indicators=True)
+>>> detect(payer="CD_GATEWAY", server="CARABWDB06", date_start='2017-01-01', date_end='2017-12-31',
+           threshold=0.1, top_n_indicator=5, get_indicators=True)
+```
+```
     [(1874863, 'HCC100', 0.6826, False,
       ['ICD10-I6789', 'CPT-70450', 'CPT-70551', 'ICD10-I679', 'ICD10-R0989'],
       [260407786, 238479950, 261261633, 263391390, 260296947],
@@ -102,6 +105,8 @@ Since CARA use different ICD-HCC mappings at different service year, this functi
 ```python
 >>> from shakespeare import update
 >>> update(63, 2018)
+```
+```
 ############################## Training New Model 63 ##############################
 Fetching training dateset...
 Time elapase: 0:11:00.040693
@@ -178,6 +183,8 @@ Retrieve a list of members' claim codes.
 ```python
 >>> from shakespeare.fetch_db import batch_member_codes
 >>> batch_member_codes("CD_HEALTHFIRST", memberIDs=[1120565])
+```
+```
 [(1120565, '130008347', 'ICD9-4011'),
  (1120565, '130008347', 'CPT-73562'),
  ...
@@ -210,6 +217,8 @@ Convert patient claim codes into sparse vector
 ```python
 >>> from shakespeare.vectorizers import build_member_input_vector
 >>> build_member_input_vector(['ICD10-I10', 'CPT-99213'], variables)
+```
+```
 <1x9974 sparse matrix of type '<class 'numpy.int32'>'
     with 1 stored elements in Compressed Sparse Row format>
 ```
