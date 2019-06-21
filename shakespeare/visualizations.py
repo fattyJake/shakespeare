@@ -122,7 +122,7 @@ def plot_performance(out_true, out_pred, save_name=None):
 
     with plt.style.context('ggplot'):
         # roc
-        fig = plt.figure(1,figsize=(18,3))
+        fig = plt.figure(1,figsize=(15,3))
         plt.subplot(141)
         plt.plot(fpr,tpr, color='seagreen',lw=2,label='ROC (area = %0.3f)' % roc_auc_score(out_true,out_pred))
         plt.fill_between(fpr, tpr, step='post', alpha=0.2, color='seagreen')
