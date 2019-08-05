@@ -21,12 +21,13 @@
 
 # check for dependancies on import
 import os
-import imp
-needed_packages = []
-for i in {'scipy','numpy','pandas','matplotlib','sklearn','pyodbc','xgboost'}:
-    try:    imp.find_module(i)
-    except: needed_packages.append(i)
-if needed_packages: raise ImportError('\nRequired shakespeare dependencies not detected. Please install: ' + ', '.join(needed_packages))
+from pkgutil import iter_modules
+
+def module_exists(module_name):
+    return module_name in (name for loader, name, ispkg in iter_modules())
+for module in ['scipy','numpy','pandas','matplotlib','sklearn','pyodbc','xgboost']:
+    if not module_exists(module):
+        raise ImportError('\nRequired shakespeare dependencies not detected. Please install: ' + ', '.join(module))
 
 mingw_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), r'mingw64', r'bin')
 os.environ['PATH'] = mingw_path + ';' + os.environ['PATH']
@@ -332,7 +333,7 @@ def detect_members(table, model=63, auto_update=False, threshold=0, output_path=
                 codes = df_HCC_member.at[idx, 'CODE']
                 indices = [codes.index(code) for code in coef_dict]
                 df_HCC_member.at[idx, 'CODE'] = [codes[i] for i in indices]
-                df_HCC_member.at[idx, 'ENCOUNTER_ID'] = [df_member.at[idx, 'ENCOUNTER_ID'][i] for i in indices]
+                df_HCC_member.at[idx, 'PRA_ID'] = [df_member.at[idx, 'PRA_ID'][i] for i in indices]
                 df_HCC_member.at[idx, 'FEATURE_IMPORTANCE'] = list(coef_dict.values())
             df_list.append(df_HCC_member)
         df_member = pd.concat(df_list, axis=0)
@@ -419,14 +420,25 @@ def delete(model):
 
 def _create_df(table):
     df_member = pd.DataFrame(table)
+    specialists = {2, 3, 4, 5, 7, 10, 11, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 27, 29, 30, 31, 35, 37, 39, 40, 41, 42, 43, 44, 45, 47,
+                   50, 51, 52, 59, 60, 62, 64, 65, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 82, 84, 88, 89, 90, 92, 93, 95, 100,
+                   102, 103, 106, 109, 111, 113, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 133, 135, 136, 140, 142, 143, 144, 145,
+                   146, 147, 148, 149, 150, 152, 153, 156, 157, 158, 159, 160, 164, 165, 166, 171, 172, 173, 174, 175, 176, 177, 179, 180,
+                   181, 182, 186, 187, 188, 189, 191, 192, 195, 196, 198, 199, 202, 206, 208, 209, 210, 212, 214, 215, 217, 220, 221, 222,
+                   223, 224, 228, 230, 231, 232, 233, 234, 237, 998, 999}
+    
+    if df_member.shape[1] == 5:
+        df_member.columns = ['MEMBER','MEMBER_CLIENT_ID','PRA_ID','SPEC_ID','CODE']
+        df_member = df_member.groupby(['MEMBER','MEMBER_CLIENT_ID', 'CODE'])['PRA_ID', 'SPEC_ID'].agg(list).reset_index()
+        df_member['SPEC_ID'] = df_member['SPEC_ID'].map(lambda x: [True if spec in specialists else False for spec in x])
+        df_member['PRA_ID'] = df_member.apply(lambda x: ','.join([str(pra) for i, pra in enumerate(x['PRA_ID']) if x['SPEC_ID'][i]]), axis=1)
+        df_member = df_member.groupby(['MEMBER','MEMBER_CLIENT_ID'])['CODE', 'PRA_ID'].agg(list).reset_index()
     if df_member.shape[1] == 4:
-        df_member.columns = ['MEMBER','MEMBER_CLIENT_ID','ENCOUNTER_ID','CODE']
-        df_member = df_member.groupby(['MEMBER','MEMBER_CLIENT_ID', 'CODE'])['ENCOUNTER_ID'].first().reset_index()
-        df_member = df_member.groupby(['MEMBER','MEMBER_CLIENT_ID'])['CODE', 'ENCOUNTER_ID'].agg(list).reset_index()
-    if df_member.shape[1] == 3:
-        df_member.columns = ['MEMBER','ENCOUNTER_ID','CODE']
-        df_member = df_member.groupby(['MEMBER', 'CODE'])['ENCOUNTER_ID'].first().reset_index()
-        df_member = df_member.groupby(['MEMBER'])['CODE', 'ENCOUNTER_ID'].agg(list).reset_index()
+        df_member.columns = ['MEMBER','PRA_ID','SPEC_ID','CODE']
+        df_member = df_member.groupby(['MEMBER', 'CODE'])['PRA_ID', 'SPEC_ID'].agg(list).reset_index()
+        df_member['SPEC_ID'] = df_member['SPEC_ID'].map(lambda x: [True if spec in specialists else False for spec in x])
+        df_member['PRA_ID'] = df_member.apply(lambda x: ','.join([str(pra) for i, pra in enumerate(x['PRA_ID']) if x['SPEC_ID'][i]]), axis=1)
+        df_member = df_member.groupby(['MEMBER'])['CODE', 'PRA_ID'].agg(list).reset_index()
     return df_member
 
 def _get_coef(classifier):
