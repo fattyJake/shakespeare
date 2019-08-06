@@ -429,12 +429,14 @@ def _create_df(table):
     
     if df_member.shape[1] == 5:
         df_member.columns = ['MEMBER','MEMBER_CLIENT_ID','PRA_ID','SPEC_ID','CODE']
+        df_member['PRA_ID'] = df_member['PRA_ID'].astype(int)
         df_member = df_member.groupby(['MEMBER','MEMBER_CLIENT_ID', 'CODE'])['PRA_ID', 'SPEC_ID'].agg(list).reset_index()
         df_member['SPEC_ID'] = df_member['SPEC_ID'].map(lambda x: [True if spec in specialists else False for spec in x])
         df_member['PRA_ID'] = df_member.apply(lambda x: ','.join([str(pra) for i, pra in enumerate(x['PRA_ID']) if x['SPEC_ID'][i]]), axis=1)
         df_member = df_member.groupby(['MEMBER','MEMBER_CLIENT_ID'])['CODE', 'PRA_ID'].agg(list).reset_index()
     if df_member.shape[1] == 4:
         df_member.columns = ['MEMBER','PRA_ID','SPEC_ID','CODE']
+        df_member['PRA_ID'] = df_member['PRA_ID'].astype(int)
         df_member = df_member.groupby(['MEMBER', 'CODE'])['PRA_ID', 'SPEC_ID'].agg(list).reset_index()
         df_member['SPEC_ID'] = df_member['SPEC_ID'].map(lambda x: [True if spec in specialists else False for spec in x])
         df_member['PRA_ID'] = df_member.apply(lambda x: ','.join([str(pra) for i, pra in enumerate(x['PRA_ID']) if x['SPEC_ID'][i]]), axis=1)
