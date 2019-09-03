@@ -8,16 +8,15 @@
 
 import numpy as np
 
-
 def coef(xgb, metric='gain'):
     """
     Customized function to get XGBClassifier coefficient
-
+    
     Parameters
     --------
     xgb: XGBClassifier
         the classifier to use for getting coefficience
-
+        
     metric: str, optional (default: 'gain')
         type of measurement of coefficiencts
             - The "gain" implies the relative contribution of the corresponding
@@ -39,7 +38,7 @@ def coef(xgb, metric='gain'):
               in each of tree1, tree2 and tree3; then the weightage for feature1
               will be 2+1+3 = 6. The frequency for feature1 is calculated as its
               percentage weight over weights of all features.
-
+              
         The "gain" is the most relevant attribute to interpret the importance
         of features.
 
