@@ -10,7 +10,8 @@ import re
 import pyodbc
 from .__init__ import _get_model_name
 
-def get_members(payer, server='CARABWDB03', date_start=None, date_end=None):
+
+def get_members(payer, server="CARABWDB03", date_start=None, date_end=None):
     """
     Retrieve memberIDs for further training
 
@@ -43,27 +44,40 @@ def get_members(payer, server='CARABWDB03', date_start=None, date_end=None):
      1869172]
     """
     # initialize
-    cursor = pyodbc.connect(r'DRIVER=SQL Server;'r'SERVER='+server+';').cursor()
+    cursor = pyodbc.connect(
+        r"DRIVER=SQL Server;" r"SERVER=" + server + ";"
+    ).cursor()
     date_start, date_end, = str(date_start), str(date_end)
-    sql = """SELECT mem_id, mem_ClientMemberID
-                   FROM """+payer+""".dbo.tbMember
-                   WHERE mem_ClientMemberID IS NOT NULL AND dateInserted BETWEEN '"""+date_start+"""' AND '"""+date_end+"""'
+    sql = (
+        """SELECT mem_id, mem_ClientMemberID
+                   FROM """
+        + payer
+        + """.dbo.tbMember
+            WHERE mem_ClientMemberID IS NOT NULL AND dateInserted BETWEEN '"""
+        + date_start
+        + """' AND '"""
+        + date_end
+        + """'
                    ORDER BY mem_id DESC
                    """
+    )
     sql = re.sub("AND dateInserted BETWEEN 'None' AND 'None'", "", sql)
     cursor.execute(sql)
     return list(set([(i[0], i[1]) for i in cursor]))
 
-#def member_demographics(memberID,payer='CD_HEALTHFIRST',server='CARABWDB03'):
-#    cursor = pyodbc.connect(r'DRIVER=SQL Server;'r'SERVER='+server+';').cursor()
-#    cursor.execute("""DECLARE @Mem_ID INT = """ +str(memberID)+ """
-#                      SELECT M.gndr_Code AS Gender, M.mem_Birthday AS DOB
-#                      FROM """+str(payer)+""".[dbo].[tbMember] M
-#                      WHERE mem_id = @Mem_id
-#                      """)
-#    return [(i[0], i[1]) for i in cursor][0]
 
-def batch_member_codes(payer='CD_HEALTHFIRST',server='CARABWDB03',memberIDs=None,date_start=None,date_end=None,file_date_lmt=None,mem_date_start=None,mem_date_end=None,model=63,get_client_id=True):
+def batch_member_codes(
+    payer="CD_HEALTHFIRST",
+    server="CARABWDB03",
+    memberIDs=None,
+    date_start=None,
+    date_end=None,
+    file_date_lmt=None,
+    mem_date_start=None,
+    mem_date_end=None,
+    model=63,
+    get_client_id=True,
+):
     """
     Retrieve a list of members' codes
     
@@ -76,7 +90,8 @@ def batch_member_codes(payer='CD_HEALTHFIRST',server='CARABWDB03',memberIDs=None
         CARA server on which the payer is located ('CARABWDB03')
         
     memberID_list : list, optional (default: None)
-        list of memberIDs (e.g. [1120565]); if None, get results from all members under payer
+        list of memberIDs (e.g. [1120565]); if None, get results from all
+        members under payer
         
     date_start : str, optional (default: None)
         string as 'YYYY-MM-DD' to get claims data from
@@ -85,7 +100,8 @@ def batch_member_codes(payer='CD_HEALTHFIRST',server='CARABWDB03',memberIDs=None
         string as 'YYYY-MM-DD' to get claims data to
         
     file_date_lmt : str, optional (default: None)
-     string as 'YYYY-MM-DD' indicating the latest file date limit of patient codes, generally at the half of one year
+        string as 'YYYY-MM-DD' indicating the latest file date limit of patient
+        codes, generally at the half of one year
      
     mem_date_start : str, optional (default: None)
         as 'YYYY-MM-DD', starting date to filter memberIDs by dateInserted
@@ -94,7 +110,9 @@ def batch_member_codes(payer='CD_HEALTHFIRST',server='CARABWDB03',memberIDs=None
         as 'YYYY-MM-DD', ending date to filter memberIDs by dateInserted
         
     model : int, optional (default: 63)
-        an integer of model version ID in MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only support 'CDPS', 'CMS' and 'HHS'
+        an integer of model version ID in
+        MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only
+        support 'CDPS', 'CMS' and 'HHS'
         
     get_client_id : boolean, optional (default: True)
         whether return member client IDs
@@ -113,135 +131,375 @@ def batch_member_codes(payer='CD_HEALTHFIRST',server='CARABWDB03',memberIDs=None
      (1120565, '130008347', 'CPT-92012'),
      (1120565, '130008347', 'ICD9-78659')]
     """
-    
+
     # initialize
-    if date_start == date_end: return []
-    if memberIDs and not isinstance(memberIDs, list): memberIDs = [memberIDs]
-    cursor = pyodbc.connect(r'DRIVER=SQL Server;'r'SERVER='+server+';', autocommit=True).cursor()
-    
-    date_start, date_end, file_date_lmt, mem_date_start, mem_date_end = str(date_start), str(date_end), str(file_date_lmt), str(mem_date_start), str(mem_date_end)
+    if date_start == date_end:
+        return []
+    if memberIDs and not isinstance(memberIDs, list):
+        memberIDs = [memberIDs]
+    cursor = pyodbc.connect(
+        r"DRIVER=SQL Server;" r"SERVER=" + server + ";", autocommit=True
+    ).cursor()
+
+    date_start, date_end, file_date_lmt, mem_date_start, mem_date_end = (
+        str(date_start),
+        str(date_end),
+        str(file_date_lmt),
+        str(mem_date_start),
+        str(mem_date_end),
+    )
     model_name = _get_model_name(model)
 
     if memberIDs:
         cursor.execute("CREATE TABLE #MemberList (mem_id INT)")
-        cursor.execute('\n'.join(["INSERT INTO #MemberList VALUES ({})".format(str(member)) for member in memberIDs]))
-        while cursor.nextset(): pass
+        cursor.execute(
+            "\n".join(
+                [
+                    "INSERT INTO #MemberList VALUES ({})".format(str(member))
+                    for member in memberIDs
+                ]
+            )
+        )
+        while cursor.nextset():
+            pass
         cursor.commit()
-        
-    sql = """
+
+    sql = (
+        """
     SET NOCOUNT ON
     
     BEGIN TRY DROP TABLE #Temp END TRY BEGIN CATCH END CATCH
     SELECT tbm.mem_id, mem_ClientMemberID
     INTO #Temp
-    FROM """+payer+""".dbo.tbMember tbm
+    FROM """
+        + payer
+        + """.dbo.tbMember tbm
         INNER JOIN #MemberList m ON tbm.mem_id = m.mem_id
-    WHERE mem_ClientMemberID IS NOT NULL AND dateInserted BETWEEN '"""+mem_date_start+"""' AND '"""+mem_date_end+"""'
+    WHERE mem_ClientMemberID IS NOT NULL AND dateInserted BETWEEN '"""
+        + mem_date_start
+        + """' AND '"""
+        + mem_date_end
+        + """'
     ORDER BY mem_id DESC"""
-    if not memberIDs: sql = re.sub("INNER JOIN \#MemberList m ON tbm\.mem\_id = m.mem\_id", "", sql)
+    )
+    if not memberIDs:
+        sql = re.sub(
+            r"INNER JOIN \#MemberList m ON tbm\.mem\_id = m.mem\_id", "", sql
+        )
     sql = re.sub(r"AND dateInserted BETWEEN 'None' AND 'None'", "", sql)
     cursor.execute(sql)
-    while cursor.nextset(): pass
+    while cursor.nextset():
+        pass
     cursor.commit()
-    
-    sql = """
+
+    mrr_queue_sql = "INNER JOIN CARA2_Processor.dbo.MrrResultQueue MQ ON "\
+        "e.mrsq_mrrresultrunid = MQ.mrsq_mrrresultrunid AND "\
+        "MQ.mrsq_DateCompleted <= '" + file_date_lmt + "'"
+    sql = (
+        """
     BEGIN TRY DROP TABLE #mrr_temp END TRY BEGIN CATCH END CATCH
-    IF OBJECT_ID('"""+re.sub(r"CD\_", "CARA2_Results_"+('HIX_' if 'HHS' in model_name else ''), payer)+""".dbo.MRRData') IS NOT NULL
+    IF OBJECT_ID('"""
+        + re.sub(
+            r"CD\_",
+            "CARA2_Results_" + ("HIX_" if "HHS" in model_name else ""),
+            payer,
+        )
+        + """.dbo.MRRData') IS NOT NULL
     BEGIN
-        --Bring in additional codes collected and confirmed by Inovalon Prospective and/or MRR Activity--
-        SELECT e.mem_id AS MemberID, tp.mem_ClientMemberID as MemberClientID, e.pra_id AS PraID, pra.spec_id AS SpecID, mrr_StartDate AS ServiceDate, CASE icdVersionInd WHEN 9 THEN 'ICD9' WHEN 10 THEN 'ICD10' ELSE 'ICD9' END AS CodeType, UPPER(e.icd_Code) AS Code
+        SELECT e.mem_id AS MemberID,
+            tp.mem_ClientMemberID               AS MemberClientID,
+            e.pra_id                            AS PraID,
+            pra.spec_id                         AS SpecID,
+            mrr_StartDate                       AS ServiceDate,
+            CASE icdVersionInd
+                WHEN 9 THEN 'ICD9' WHEN 10 THEN 'ICD10' ELSE 'ICD9' END
+                                                AS CodeType,
+            UPPER(e.icd_Code)                   AS Code
     	INTO #mrr_temp
-        FROM """+re.sub(r"CD\_", "CARA2_Results_"+('HIX_' if 'HHS' in model_name else ''), payer)+""".dbo.MRRData e WITH(NOLOCK)
+        FROM """
+        + re.sub(
+            r"CD\_",
+            "CARA2_Results_" + ("HIX_" if "HHS" in model_name else ""),
+            payer,
+        )
+        + """.dbo.MRRData e WITH(NOLOCK)
                         INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-                        LEFT JOIN """+payer+""".dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
-                        """+f"""{"INNER JOIN CARA2_Processor.dbo.MrrResultQueue MQ ON e.mrsq_mrrresultrunid = MQ.mrsq_mrrresultrunid AND MQ.mrsq_DateCompleted <= '"+file_date_lmt+"'" if file_date_lmt != 'None' else ''}"""+"""
-        WHERE e.mrr_StartDate BETWEEN '"""+date_start+"""' AND '"""+date_end+"""'
+                        LEFT JOIN """
+        + payer
+        + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
+                        """
+        + f"""{mrr_queue_sql if file_date_lmt != 'None' else ''}"""
+        + """
+        WHERE e.mrr_StartDate BETWEEN '"""
+        + date_start
+        + """' AND '"""
+        + date_end
+        + """'
     END"""
-    sql = re.sub(r"WHERE (e|p)\.[a-zA-Z\_]+ BETWEEN 'None' AND 'None'", "", sql)
+    )
+    sql = re.sub(
+        r"WHERE (e|p)\.[a-zA-Z\_]+ BETWEEN 'None' AND 'None'", "", sql
+    )
 
     cursor.execute(sql)
-    while cursor.nextset(): pass
+    while cursor.nextset():
+        pass
     cursor.commit()
-    
+
     sql = """
     IF OBJECT_ID('tempdb..#mrr_temp') IS NULL
     BEGIN
-        CREATE TABLE #mrr_temp (MemberID INT, MemberClientID VARCHAR(50), EncounterID INT, ServiceDate DATE, CodeType VARCHAR(50), Code VARCHAR(50))
+        CREATE TABLE #mrr_temp (MemberID INT,
+            MemberClientID VARCHAR(50),
+            EncounterID INT,
+            ServiceDate DATE,
+            CodeType VARCHAR(50),
+            Code VARCHAR(50))
     END"""
     cursor.execute(sql)
-    while cursor.nextset(): pass
+    while cursor.nextset():
+        pass
     cursor.commit()
-    
-    sql = """
-    SELECT e.mem_id AS MemberID, tp.mem_ClientMemberID as MemberClientID, e.pra_id AS PraID, pra.spec_id AS SpecID, ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) AS ServiceDate, CASE icdVersionInd WHEN 9 THEN 'ICD9' WHEN 10 THEN 'ICD10' ELSE 'ICD9' END AS CodeType, UPPER(ed.icd_Code) AS Code
-    FROM """+payer+""".dbo.tbEncounter e WITH(NOLOCK)
-                    INNER JOIN """+payer+""".dbo.tbEncounterDiagnosis ed ON e.enc_id = ed.enc_id
+
+    sql = (
+        """
+    SELECT e.mem_id                                         AS MemberID,
+        tp.mem_ClientMemberID                               AS MemberClientID,
+        e.pra_id                                            AS PraID,
+        pra.spec_id                                         AS SpecID,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
+        CASE icdVersionInd
+            WHEN 9 THEN 'ICD9' WHEN 10 THEN 'ICD10' ELSE 'ICD9' END
+                                                            AS CodeType,
+        UPPER(ed.icd_Code)                                  AS Code
+    FROM """
+        + payer
+        + """.dbo.tbEncounter e WITH(NOLOCK)
+                    INNER JOIN """
+        + payer
+        + """.dbo.tbEncounterDiagnosis ed ON e.enc_id = ed.enc_id
     				INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-                    LEFT JOIN """+payer+""".dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
-                    INNER JOIN """+payer+""".dbo.tbFile f WITH(NOLOCK) ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""+file_date_lmt+"""'
-    WHERE ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) BETWEEN '"""+date_start+"""' AND '"""+date_end+"""'
+                    LEFT JOIN """
+        + payer
+        + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
+                    INNER JOIN """
+        + payer
+        + """.dbo.tbFile f WITH(NOLOCK)
+            ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
+        + file_date_lmt
+        + """'
+    WHERE ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) BETWEEN '"""
+        + date_start
+        + """' AND '"""
+        + date_end
+        + """'
     UNION
     --Bring in diagnoses codes from RAPS Returns
-    SELECT e.mem_id AS MemberID, tp.mem_ClientMemberID as MemberClientID, -1 AS PraID, -1 AS SpecID, raps_DOSfrom AS ServiceDate, CASE when raps_ICD10 is NULL THEN 'ICD9' else 'ICD10' END AS CodeType, ISNULL(UPPER(raps_ICD10),UPPER(raps_ICD9)) AS Code
-    FROM """+payer+""".dbo.tbMedicareRapsReturn e WITH(NOLOCK)
+    SELECT e.mem_id                                          AS MemberID,
+        tp.mem_ClientMemberID                                AS MemberClientID,
+        -1                                                   AS PraID,
+        -1                                                   AS SpecID,
+        raps_DOSfrom                                         AS ServiceDate,
+        CASE WHEN raps_ICD10 is NULL THEN 'ICD9' else 'ICD10' END
+                                                             AS CodeType,
+        ISNULL(UPPER(raps_ICD10),UPPER(raps_ICD9))           AS Code
+    FROM """
+        + payer
+        + """.dbo.tbMedicareRapsReturn e WITH(NOLOCK)
                     INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-                    INNER JOIN """+payer+""".dbo.tbFile f WITH(NOLOCK) ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""+file_date_lmt+"""'
-    WHERE e.raps_DOSfrom BETWEEN '"""+date_start+"""' AND '"""+date_end+"""'
+                    INNER JOIN """
+        + payer
+        + """.dbo.tbFile f WITH(NOLOCK)
+            ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
+        + file_date_lmt
+        + """'
+    WHERE e.raps_DOSfrom BETWEEN '"""
+        + date_start
+        + """' AND '"""
+        + date_end
+        + """'
     		AND ISNULL(e.raps_DiagError1, '') IN ('', '502')
     		AND ISNULL(e.raps_DiagError2, '') = ''
     		AND (ISNULL(e.raps_HICError, '') IN ('', '500') 
     		AND ISNULL(e.raps_MBIError, '') IN ('', '503'))
     		AND ISNULL(e.risk_assessment_code_error, '') = ''
     UNION
-    SELECT e.mem_id AS MemberID, tp.mem_ClientMemberID as MemberClientID, e.pra_id AS PraID, pra.spec_id AS SpecID, ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) AS ServiceDate, 'CPT' AS CodeType, eCPT.cpt_Code AS Code
-    FROM """+payer+""".dbo.tbEncounter e WITH(NOLOCK)
-                    INNER JOIN """+payer+""".dbo.tbEncounterCPT eCPT ON e.enc_id = eCPT.enc_id
+    SELECT e.mem_id                                         AS MemberID,
+        tp.mem_ClientMemberID                               AS MemberClientID,
+        e.pra_id                                            AS PraID,
+        pra.spec_id                                         AS SpecID,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
+        'CPT'                                               AS CodeType,
+        eCPT.cpt_Code                                       AS Code
+    FROM """
+        + payer
+        + """.dbo.tbEncounter e WITH(NOLOCK)
+                    INNER JOIN """
+        + payer
+        + """.dbo.tbEncounterCPT eCPT ON e.enc_id = eCPT.enc_id
     				INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-                    LEFT JOIN """+payer+""".dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
-                    INNER JOIN """+payer+""".dbo.tbFile f WITH(NOLOCK) ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""+file_date_lmt+"""'
-    WHERE ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) BETWEEN '"""+date_start+"""' AND '"""+date_end+"""'
+                    LEFT JOIN """
+        + payer
+        + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
+                    INNER JOIN """
+        + payer
+        + """.dbo.tbFile f WITH(NOLOCK)
+            ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
+        + file_date_lmt
+        + """'
+    WHERE ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) BETWEEN '"""
+        + date_start
+        + """' AND '"""
+        + date_end
+        + """'
     UNION
-    SELECT e.mem_id AS MemberID, tp.mem_ClientMemberID as MemberClientID, e.pra_id AS PraID, pra.spec_id AS SpecID, ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) AS ServiceDate, 'DRG' AS CodeType, eDRG.DRG_Code AS Code
-    FROM """+payer+""".dbo.tbEncounter e WITH(NOLOCK)
-                    INNER JOIN """+payer+""".dbo.tbEncounterDRG eDRG ON e.enc_id = eDRG.enc_id
+    SELECT e.mem_id                                         AS MemberID,
+        tp.mem_ClientMemberID                               AS MemberClientID,
+        e.pra_id                                            AS PraID,
+        pra.spec_id                                         AS SpecID,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
+        'DRG'                                               AS CodeType,
+        eDRG.DRG_Code                                       AS Code
+    FROM """
+        + payer
+        + """.dbo.tbEncounter e WITH(NOLOCK)
+                    INNER JOIN """
+        + payer
+        + """.dbo.tbEncounterDRG eDRG ON e.enc_id = eDRG.enc_id
     				INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-                    LEFT JOIN """+payer+""".dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
-                    INNER JOIN """+payer+""".dbo.tbFile f WITH(NOLOCK) ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""+file_date_lmt+"""'
-    WHERE ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) BETWEEN '"""+date_start+"""' AND '"""+date_end+"""'
+                    LEFT JOIN """
+        + payer
+        + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
+                    INNER JOIN """
+        + payer
+        + """.dbo.tbFile f WITH(NOLOCK)
+            ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
+        + file_date_lmt
+        + """'
+    WHERE ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) BETWEEN '"""
+        + date_start
+        + """' AND '"""
+        + date_end
+        + """'
     UNION
-    SELECT e.mem_id AS MemberID, tp.mem_ClientMemberID as MemberClientID, e.pra_id AS PraID, pra.spec_id AS SpecID, ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) AS ServiceDate, 'HCPCS' AS CodeType, eHCPCS.HCPCS_Code AS Code
-    FROM """+payer+""".dbo.tbEncounter e WITH(NOLOCK)
-                    INNER JOIN """+payer+""".dbo.tbEncounterHCPCS eHCPCS ON e.enc_id = eHCPCS.enc_id
+    SELECT e.mem_id                                         AS MemberID,
+        tp.mem_ClientMemberID                               AS MemberClientID,
+        e.pra_id                                            AS PraID,
+        pra.spec_id                                         AS SpecID,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
+        'HCPCS'                                             AS CodeType,
+        eHCPCS.HCPCS_Code                                   AS Code
+    FROM """
+        + payer
+        + """.dbo.tbEncounter e WITH(NOLOCK)
+                    INNER JOIN """
+        + payer
+        + """.dbo.tbEncounterHCPCS eHCPCS ON e.enc_id = eHCPCS.enc_id
     				INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-                    LEFT JOIN """+payer+""".dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
-                    INNER JOIN """+payer+""".dbo.tbFile f WITH(NOLOCK) ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""+file_date_lmt+"""'
-    WHERE ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) BETWEEN '"""+date_start+"""' AND '"""+date_end+"""' 
+                    LEFT JOIN """
+        + payer
+        + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
+                    INNER JOIN """
+        + payer
+        + """.dbo.tbFile f WITH(NOLOCK)
+            ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
+        + file_date_lmt
+        + """'
+    WHERE ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) BETWEEN '"""
+        + date_start
+        + """' AND '"""
+        + date_end
+        + """' 
     UNION
-    SELECT e.mem_id AS MemberID, tp.mem_ClientMemberID as MemberClientID, e.pra_id AS PraID, pra.spec_id AS SpecID, ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) AS ServiceDate, CASE icdVersionInd WHEN 9 THEN 'ICD9Proc' WHEN 10 THEN 'ICD10Proc' ELSE 'ICD9Proc' END AS CodeType, eProc.icd_Code AS Code
-    FROM """+payer+""".dbo.tbEncounter e WITH(NOLOCK)
-                    INNER JOIN """+payer+""".dbo.tbEncounterProcedure eProc ON e.enc_id = eProc.enc_id
+    SELECT e.mem_id                                         AS MemberID,
+        tp.mem_ClientMemberID                               AS MemberClientID,
+        e.pra_id                                            AS PraID,
+        pra.spec_id                                         AS SpecID,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
+        CASE icdVersionInd
+            WHEN 9 THEN 'ICD9Proc' WHEN 10 THEN 'ICD10Proc' ELSE 'ICD9Proc' END
+                                                            AS CodeType,
+        eProc.icd_Code                                      AS Code
+    FROM """
+        + payer
+        + """.dbo.tbEncounter e WITH(NOLOCK)
+                    INNER JOIN """
+        + payer
+        + """.dbo.tbEncounterProcedure eProc ON e.enc_id = eProc.enc_id
     				INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-                    LEFT JOIN """+payer+""".dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
-                    INNER JOIN """+payer+""".dbo.tbFile f WITH(NOLOCK) ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""+file_date_lmt+"""'
-    WHERE ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) BETWEEN '"""+date_start+"""' AND '"""+date_end+"""'
+                    LEFT JOIN """
+        + payer
+        + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
+                    INNER JOIN """
+        + payer
+        + """.dbo.tbFile f WITH(NOLOCK)
+            ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
+        + file_date_lmt
+        + """'
+    WHERE ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) BETWEEN '"""
+        + date_start
+        + """' AND '"""
+        + date_end
+        + """'
     UNION
-    SELECT p.mem_id AS MemberID, tp.mem_ClientMemberID as MemberClientID, p.pra_id AS PraID, pra.spec_id AS SpecID, pha_ServiceDate AS ServiceDate, 'NDC9' AS CodeType, NDC.ndcl_NDC9Code AS Code
-    FROM """+payer+""".dbo.tbPharmacy p WITH(NOLOCK)
-                    INNER JOIN """+payer+""".dbo.tbPharmacyNDC NDC ON p.pha_id = NDC.pha_id
+    SELECT p.mem_id                                         AS MemberID,
+        tp.mem_ClientMemberID                               AS MemberClientID,
+        p.pra_id                                            AS PraID,
+        pra.spec_id                                         AS SpecID,
+        pha_ServiceDate                                     AS ServiceDate,
+        'NDC9'                                              AS CodeType,
+        NDC.ndcl_NDC9Code                                   AS Code
+    FROM """
+        + payer
+        + """.dbo.tbPharmacy p WITH(NOLOCK)
+                    INNER JOIN """
+        + payer
+        + """.dbo.tbPharmacyNDC NDC ON p.pha_id = NDC.pha_id
     				INNER JOIN #Temp tp ON tp.mem_id = p.mem_id
-                    LEFT JOIN """+payer+""".dbo.tbPractitioner pra ON pra.pra_id = p.pra_id
-                    INNER JOIN """+payer+""".dbo.tbFile f WITH(NOLOCK) ON f.fil_id = p.fil_id AND f.fil_StartDate <= '"""+file_date_lmt+"""'
-    WHERE p.pha_ServiceDate BETWEEN '"""+date_start+"""' AND '"""+date_end+"""'
+                    LEFT JOIN """
+        + payer
+        + """.dbo.tbPractitioner pra ON pra.pra_id = p.pra_id
+                    INNER JOIN """
+        + payer
+        + """.dbo.tbFile f WITH(NOLOCK)
+            ON f.fil_id = p.fil_id AND f.fil_StartDate <= '"""
+        + file_date_lmt
+        + """'
+    WHERE p.pha_ServiceDate BETWEEN '"""
+        + date_start
+        + """' AND '"""
+        + date_end
+        + """'
     UNION
     SELECT * FROM #mrr_temp
     """
-    sql = re.sub(r"WHERE (e|p)\.[a-zA-Z\_]+ BETWEEN 'None' AND 'None'", "", sql)
-    sql = re.sub(r"WHERE ISNULL\(e\.enc\_DischargeDate, e\.enc\_ServiceDate\) BETWEEN 'None' AND 'None'", "", sql)
-    sql = re.sub(r"INNER JOIN "+payer+"\.dbo\.tbFile f WITH\(NOLOCK\) ON f\.fil_id = (e|p)\.fil_id AND f\.fil_StartDate <= 'None'", "", sql)
+    )
+    sql = re.sub(
+        r"WHERE (e|p)\.[a-zA-Z\_]+ BETWEEN 'None' AND 'None'", "", sql
+    )
+    sql = re.sub(
+        r"WHERE ISNULL\(e\.enc\_DischargeDate, e\.enc\_ServiceDate\) BETWEEN "\
+            r"'None' AND 'None'",
+        "",
+        sql,
+    )
+    sql = re.sub(
+        r"INNER JOIN "
+        + payer
+        + r"\.dbo\.tbFile f WITH\(NOLOCK\) ON f\.fil_id = (e|p)\.fil_id AND "\
+            r"f\.fil_StartDate <= 'None'",
+        "",
+        sql,
+    )
 
     table = cursor.execute(sql).fetchall()
     cursor.close()
-    if get_client_id: table = list(set([(i[0], i[1], i[2], i[3], i[5]+'-'+i[6]) for i in table]))
-    else:             table = list(set([(i[0], i[2], i[3], i[5]+'-'+i[6]) for i in table]))
+    if get_client_id:
+        table = list(
+            set([(i[0], i[1], i[2], i[3], i[5] + "-" + i[6]) for i in table])
+        )
+    else:
+        table = list(
+            set([(i[0], i[2], i[3], i[5] + "-" + i[6]) for i in table])
+        )
     return table
-    
