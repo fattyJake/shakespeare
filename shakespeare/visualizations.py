@@ -154,7 +154,7 @@ def plot_performance(out_true, out_pred, save_name=None):
 
     with plt.style.context("ggplot"):
         # roc
-        fig = plt.figure(1, figsize=(15, 3))
+        fig = plt.figure(1, figsize=(18, 3))
         plt.subplot(141)
         plt.plot(
             fpr,
