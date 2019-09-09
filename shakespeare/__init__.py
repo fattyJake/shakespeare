@@ -715,7 +715,7 @@ def _create_df(table):
             "SPEC_ID",
             "CODE",
         ]
-        df_member["PRA_ID"] = df_member["PRA_ID"].astype(int)
+        df_member["PRA_ID"] = df_member["PRA_ID"].fillna(-1)
         df_member = (
             df_member.groupby(["MEMBER", "MEMBER_CLIENT_ID", "CODE"])[
                 "PRA_ID", "SPEC_ID"
@@ -743,7 +743,7 @@ def _create_df(table):
         )
     if df_member.shape[1] == 4:
         df_member.columns = ["MEMBER", "PRA_ID", "SPEC_ID", "CODE"]
-        df_member["PRA_ID"] = df_member["PRA_ID"].astype(int)
+        df_member["PRA_ID"] = df_member["PRA_ID"].fillna(-1)
         df_member = (
             df_member.groupby(["MEMBER", "CODE"])["PRA_ID", "SPEC_ID"]
             .agg(list)

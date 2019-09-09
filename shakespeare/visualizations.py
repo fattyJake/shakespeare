@@ -111,12 +111,13 @@ def plot_coefficients(
             figsize=(5, ((len(variables) + 1) + 2 * spacing) * barwidth)
         )
         plt.barh(np.arange(len(variables)), coefs, align="center", alpha=0.5)
-        if bottom:
-            plt.title("Top & Bottom " + str(int(n)) + " Variable Coefficients")
-        else:
-            plt.title(
-                "Top " + str(int(n)) + " Variable Coefficients for " + name
-            )
+        plt.title(
+            "Top "
+            + ("& Bottom " if bottom else "")
+            + str(int(n))
+            + " Variable Coefficients for "
+            + name
+        )
         plt.xlabel("Coefficients")
         plt.yticks(np.arange(len(variables)), variables)
         plt.ylim((-1 * barwidth * 4, len(variables) - barwidth))
@@ -154,7 +155,7 @@ def plot_performance(out_true, out_pred, save_name=None):
 
     with plt.style.context("ggplot"):
         # roc
-        fig = plt.figure(1, figsize=(18, 3))
+        fig = plt.figure(1, figsize=(15, 3))
         plt.subplot(141)
         plt.plot(
             fpr,

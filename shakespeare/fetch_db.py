@@ -486,8 +486,8 @@ def batch_member_codes(
     sql = re.sub(
         r"INNER JOIN "
         + payer
-        + r"\.dbo\.tbFile f WITH\(NOLOCK\) ON f\.fil_id = (e|p)\.fil_id AND "\
-            r"f\.fil_StartDate <= 'None'",
+        + r"\.dbo\.tbFile f WITH\(NOLOCK\)\s+ON f\.fil_id = (e|p)\.fil_id AND "\
+            r"f\.fil\_StartDate <= 'None'",
         "",
         sql,
     )
