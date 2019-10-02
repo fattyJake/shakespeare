@@ -28,22 +28,22 @@ def plot_coefficients(
     --------
     classifier : XGBClassifier or CalibratedClassifierCV
         the classifier to use in the ensemble
-        
+
     variables : list
         variable space to map plot axis
-        
+
     name : str
         HCC name of the coefficient
-        
+
     n : int, optional (default: 50)
         returns top/bottom n variables
-        
+
     bottom : boolean, optional (default: False)
         returns bottom n variables
-        
+
     save_name : str, optional (default: None)
         the path of output image; if provided, save the plot to disk
-    
+
     Examples
     --------
     >>> from shakespeare.visualizations import plot_coefficients
@@ -130,15 +130,15 @@ def plot_coefficients(
 def plot_performance(out_true, out_pred, save_name=None):
     """
     Plot ROC, Precision-Recall, Precision-Threshold and Calibration
-    
+
     Parameters
     --------
     out_true : list or 1-D array
         list of output booleans indicicating if True
-        
+
     out_pred : list or 1-D array
         list of probabilities
-    
+
     save_name : str, optional (default: None)
         the path of output image; if provided, save the plot to disk
 
@@ -155,7 +155,7 @@ def plot_performance(out_true, out_pred, save_name=None):
 
     with plt.style.context("ggplot"):
         # roc
-        fig = plt.figure(1, figsize=(15, 3))
+        fig = plt.figure(1, figsize=(18, 3))
         plt.subplot(141)
         plt.plot(
             fpr,
@@ -226,13 +226,13 @@ def plot_numerics(out_true, out_pred, log=False, save_name=None):
     --------
     out_true : list or 1-D array
         list of ground truth y
-        
+
     out_pred : list or 1-D array
         list of y-hat
-    
+
     log : boolean, optional (default: False)
         if True, tranform y-axis as logged for visualization purpose
-    
+
     save_name : str, optional (default: None)
         the path of output image; if provided, save the plot to disk
 
@@ -325,22 +325,22 @@ def plot_comparison(
     --------
     y_true : list or 1-D array
         list of output booleans indicicating if True
-        
+
     y_score_1 : list or 1-D array
         list of probabilities of model 1
 
     y_score_2 : list or 1-D array
         list of probabilities of model 2
-    
+
     name_1 : str
         name of model 1
-        
+
     name_2 : str
         name of model 2
-    
+
     thre : float, optional (default: 0.5)
         threshold for point marker on the curves
-    
+
     save_name : str, optional (default: None)
         the path of output image; if provided, save the plot to disk
 

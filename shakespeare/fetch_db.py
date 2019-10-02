@@ -19,13 +19,13 @@ def get_members(payer, server="CARABWDB03", date_start=None, date_end=None):
     --------
     payer : str
         name of payer table (e.g. 'CD_HEALTHFIRST')
-        
+
     server : str
         CARA server on which the payer is located ('CARABWDB03')
-        
+
     date_start : str, optional (default: None)
         as 'YYYY-MM-DD', starting date to filter memberIDs by dateInserted
-        
+
     date_end : str, optional (default: None)
         as 'YYYY-MM-DD', ending date to filter memberIDs by dateInserted
 
@@ -80,40 +80,40 @@ def batch_member_codes(
 ):
     """
     Retrieve a list of members' codes
-    
+
     Parameters
     --------
     payer : str
         name of payer table (e.g. 'CD_HEALTHFIRST')
-        
+
     server : str
         CARA server on which the payer is located ('CARABWDB03')
-        
+
     memberID_list : list, optional (default: None)
         list of memberIDs (e.g. [1120565]); if None, get results from all
         members under payer
-        
+
     date_start : str, optional (default: None)
         string as 'YYYY-MM-DD' to get claims data from
-        
+
     date_end : str, optional (default: None)
         string as 'YYYY-MM-DD' to get claims data to
-        
+
     file_date_lmt : str, optional (default: None)
         string as 'YYYY-MM-DD' indicating the latest file date limit of patient
         codes, generally at the half of one year
-     
+
     mem_date_start : str, optional (default: None)
         as 'YYYY-MM-DD', starting date to filter memberIDs by dateInserted
-        
+
     mem_date_end : str, optional (default: None)
         as 'YYYY-MM-DD', ending date to filter memberIDs by dateInserted
-        
+
     model : int, optional (default: 63)
         an integer of model version ID in
         MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only
         support 'CDPS', 'CMS' and 'HHS'
-        
+
     get_client_id : boolean, optional (default: True)
         whether return member client IDs
 
@@ -167,7 +167,7 @@ def batch_member_codes(
     sql = (
         """
     SET NOCOUNT ON
-    
+
     BEGIN TRY DROP TABLE #Temp END TRY BEGIN CATCH END CATCH
     SELECT tbm.mem_id, mem_ClientMemberID
     INTO #Temp
@@ -251,7 +251,8 @@ def batch_member_codes(
     BEGIN
         CREATE TABLE #mrr_temp (MemberID INT,
             MemberClientID VARCHAR(50),
-            EncounterID INT,
+            PraID INT,
+            SpecID INT,
             ServiceDate DATE,
             CodeType VARCHAR(50),
             Code VARCHAR(50))
@@ -320,7 +321,7 @@ def batch_member_codes(
         + """'
     		AND ISNULL(e.raps_DiagError1, '') IN ('', '502')
     		AND ISNULL(e.raps_DiagError2, '') = ''
-    		AND (ISNULL(e.raps_HICError, '') IN ('', '500') 
+    		AND (ISNULL(e.raps_HICError, '') IN ('', '500')
     		AND ISNULL(e.raps_MBIError, '') IN ('', '503'))
     		AND ISNULL(e.risk_assessment_code_error, '') = ''
     UNION
@@ -409,7 +410,7 @@ def batch_member_codes(
         + date_start
         + """' AND '"""
         + date_end
-        + """' 
+        + """'
     UNION
     SELECT e.mem_id                                         AS MemberID,
         tp.mem_ClientMemberID                               AS MemberClientID,
