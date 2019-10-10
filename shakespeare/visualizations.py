@@ -122,6 +122,7 @@ def plot_coefficients(
         plt.yticks(np.arange(len(variables)), variables)
         plt.ylim((-1 * barwidth * 4, len(variables) - barwidth))
         plt.grid(linestyle="dashed", axis="x")
+        fig.tight_layout()
         plt.show()
         if save_name:
             fig.savefig(save_name, bbox_inches="tight")
@@ -213,6 +214,7 @@ def plot_performance(out_true, out_pred, save_name=None):
         plt.ylim([0.0, 1.0])
         plt.legend()
         plt.plot((0, 1), "k--")
+        fig.tight_layout()
         plt.show()
         if save_name:
             fig.savefig(save_name, bbox_inches="tight")
@@ -310,6 +312,7 @@ def plot_numerics(out_true, out_pred, log=False, save_name=None):
         plt.ylabel("Normalized Frequency")
         plt.title("Histogram")
         plt.legend()
+        fig.tight_layout()
         plt.show()
         if save_name:
             fig.savefig(save_name, bbox_inches="tight")
@@ -428,6 +431,7 @@ def plot_comparison(
         plt.ylim([0.0, 1.05])
         plt.xlim([0.0, 1.0])
         plt.legend()
+        fig.tight_layout()
         plt.show()
         if save_name:
             fig.savefig(save_name, bbox_inches="tight")

@@ -841,10 +841,10 @@ def _get_model_name(model):
     cursor = pyodbc.connect(r"DRIVER=SQL Server;" r"SERVER=MPBWDB1;").cursor()
     model_name = cursor.execute(
         """
-                                SELECT [mv_ModelVersionName]
-                                FROM [CARA2_Controller].[dbo].[ModelVersions]
-                                WHERE mv_IsActive=1 
-                                AND mv_ModelVersionID = {}""".format(
+        SELECT [mv_ModelVersionName]
+        FROM [CARA2_Controller].[dbo].[ModelVersions]
+        WHERE mv_IsActive=1 
+        AND mv_ModelVersionID = {}""".format(
             model
         )
     ).fetchall()
