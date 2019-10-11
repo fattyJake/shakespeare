@@ -108,7 +108,11 @@ def plot_coefficients(
         spacing = 3
         barwidth = 0.2
         fig = plt.figure(
-            figsize=(5, ((len(variables) + 1) + 2 * spacing) * barwidth)
+            figsize=(
+                int(max([len(v) for v in variables]) / 10) + 3,
+                (len(variables) + 1) * barwidth
+            )
+            # figsize=(5, ((len(variables) + 1) + 2 * spacing) * barwidth)
         )
         plt.barh(np.arange(len(variables)), coefs, align="center", alpha=0.5)
         plt.title(
@@ -156,7 +160,7 @@ def plot_performance(out_true, out_pred, save_name=None):
 
     with plt.style.context("ggplot"):
         # roc
-        fig = plt.figure(1, figsize=(18, 3))
+        fig = plt.figure(1, figsize=(15, 3))
         plt.subplot(141)
         plt.plot(
             fpr,
