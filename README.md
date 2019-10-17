@@ -306,7 +306,7 @@ shakespeare.visualizations.plot_comparison(y_true, y_score_1, y_score_2, name_1,
 >>> y_true = [0, 1, ... 1, 0]
 >>> y_prob_1 = [0.0000342, 0.99999974, ... 0.84367323, 0.5400342]
 >>> y_prob_2 = [0.0000093, 0.99999742, ... 0.99999618, 0.2400342]
->>> plot_comparison(y_true, y_prob_1, y_prob_2, 'SVC', 'XGBoost')
+>>> plot_comparison(y_true, y_prob_1, y_prob_2, XGBoost', 'LogisticRegression')
 ```
 
 <p align="center">
