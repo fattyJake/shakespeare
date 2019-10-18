@@ -56,12 +56,18 @@ def plot_coefficients(
         return
     if "XGB" in str(classifier.__str__):
         coefs = xgb_coef.coef(classifier)
-    if "CalibratedClassifierCV" in str(classifier.__str__):
+    elif "CalibratedClassifierCV" in str(classifier.__str__):
         coefs = [
             xgb_coef.coef(c.base_estimator)
             for c in classifier.calibrated_classifiers_
         ]
         coefs = np.sum(coefs, axis=0) / classifier.cv
+    else:
+        coefs = None
+        raise ValueError(
+            "model only accept XGBClassifier or CalibratedClassifierCV, "
+            + f"got {str(classifier.__str__)} instead."
+        )
 
     if isinstance(coefs, np.ndarray):
         coefs = coefs.tolist()
