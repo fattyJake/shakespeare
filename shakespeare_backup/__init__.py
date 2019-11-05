@@ -61,7 +61,6 @@ import pandas as pd
 from scipy.sparse import csr_matrix, vstack
 
 from xgboost import XGBClassifier
-import shap
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.utils import shuffle
 
@@ -489,7 +488,6 @@ def detect_members(
         print("Finding indicators...")
         del df_vector
         gc.collect()
-
         filtered_condtions = (
             df_condition.groupby("MEMBER")["HCC"].agg(list).to_dict()
         )
@@ -497,31 +495,21 @@ def detect_members(
         df_member["FEATURE_IMPORTANCE"] = df_member[
             "FEATURE_IMPORTANCE"
         ].astype(object)
-
+        input_data = input_data.toarray()
         df_list = []
         for HCC in indicators.keys():
             if indicators[HCC] is None:
                 continue
-
-            explainer = shap.TreeExplainer(
-                ensemble[HCC]['classifier']
-                    .calibrated_classifiers_[0]
-                    .base_estimator
-            )
             df_HCC_member = df_member.copy(deep=True)
             df_HCC_member["HCC"] = HCC
-            coef_matrix = explainer.shap_values(input_data)
-            coef_matrix = (input_data.toarray() * coef_matrix)
-
-            for idx, member in df_HCC_member.iterrows():
+            coef_matrix = (input_data * indicators[HCC]).round(6)
+            for idx, member in df_HCC_member[["MEMBER"]].iterrows():
                 try:
                     if HCC not in filtered_condtions[member["MEMBER"]]:
                         continue
                 except KeyError:
                     continue
-
-                codes = member["CODE"]
-                i = list(np.where(coef_matrix[idx] > 0)[0])
+                i = list(np.nonzero(coef_matrix[idx])[0])
                 coef_dict = dict(
                     zip(
                         [variables[index] for index in i],
@@ -535,7 +523,7 @@ def detect_members(
                         reverse=True,
                     )[:top_n_indicator]
                 )
-
+                codes = df_HCC_member.at[idx, "CODE"]
                 indices = [codes.index(code) for code in coef_dict]
                 df_HCC_member.at[idx, "CODE"] = [codes[i] for i in indices]
                 df_HCC_member.at[idx, "PRA_ID"] = [
@@ -545,9 +533,6 @@ def detect_members(
                     coef_dict.values()
                 )
             df_list.append(df_HCC_member)
-            del explainer, coef_matrix
-            gc.collect()
-
         df_member = pd.concat(df_list, axis=0)
         del input_data, df_list
         gc.collect()
