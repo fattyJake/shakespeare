@@ -25,7 +25,8 @@ setup(
             "pyodbc>=4.0.25",
             "matplotlib>=3.0.2",
             "scikit-learn>=0.20.2",
-            "xgboost==0.72"],
+            "xgboost==0.72",
+            "shap==0.31.0"],
     include_package_data=True,
     url="inovalon.com",
     description='''A python package designed to detect CARA condition gaps'''
