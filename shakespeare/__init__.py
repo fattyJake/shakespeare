@@ -211,8 +211,8 @@ def detect(
             update(model, year)
         else:
             raise FileNotFoundError(
-                f"Model version not exist! Please use `shakespeare."\
-                    f"update({model}, {year})` to train ML for Model {model}."
+                f"Model version not exist! Please use `shakespeare."
+                f"update({model}, {year})` to train ML for Model {model}."
             )
 
     print("Getting data...")
@@ -249,8 +249,8 @@ def detect(
         print(f"Total batches: {len(memberID_list)}")
         for batch, sub_mem in enumerate(memberID_list):
             print(
-                f"###################### Processing batch {batch+1} #########"\
-                    f"#############"
+                f"###################### Processing batch {batch+1} #########"
+                f"#############"
             )
             table = fetch_db.batch_member_codes(
                 payer=payer,
@@ -504,14 +504,14 @@ def detect_members(
                 continue
 
             explainer = shap.TreeExplainer(
-                ensemble[HCC]['classifier']
-                    .calibrated_classifiers_[0]
-                    .base_estimator
+                ensemble[HCC]["classifier"]
+                .calibrated_classifiers_[0]
+                .base_estimator
             )
             df_HCC_member = df_member.copy(deep=True)
             df_HCC_member["HCC"] = HCC
             coef_matrix = explainer.shap_values(input_data)
-            coef_matrix = (input_data.toarray() * coef_matrix)
+            coef_matrix = input_data.toarray() * coef_matrix
 
             for idx, member in df_HCC_member.iterrows():
                 try:
@@ -538,9 +538,12 @@ def detect_members(
 
                 indices = [codes.index(code) for code in coef_dict]
                 df_HCC_member.at[idx, "CODE"] = [codes[i] for i in indices]
-                df_HCC_member.at[idx, "PRA_ID"] = [
-                    df_member.at[idx, "PRA_ID"][i] for i in indices
-                ]
+                pra_list = itertools.chain(
+                    *[df_member.at[idx, "PRA_ID"][i] for i in indices]
+                )
+                df_HCC_member.at[idx, "PRA_ID"] = list(
+                    _unique_keeping_order(pra_list)
+                )
                 df_HCC_member.at[idx, "FEATURE_IMPORTANCE"] = list(
                     coef_dict.values()
                 )
@@ -710,15 +713,11 @@ def delete(model):
 def _create_df(table):
     df_member = pd.DataFrame(table)
     SPECIALISTS = {
-        2, 3, 4, 5, 10, 11, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 29, 30, 31,
-        35, 37, 39, 40, 41, 42, 43, 44, 45, 47, 50, 51, 52, 59, 60, 62, 64, 67,
-        69, 70, 71, 73, 74, 76, 78, 79, 84, 87, 88, 89, 90, 92, 93, 100, 102,
-        103, 109, 111, 113, 118, 120, 121, 122, 123, 124, 125, 126, 127, 133,
-        135, 136, 142, 143, 144, 145, 146, 147, 148, 149, 150, 152, 153, 156,
-        157, 158, 159, 160, 164, 165, 166, 171, 172, 173, 174, 175, 176, 179,
-        180, 181, 182, 186, 187, 188, 189, 191, 192, 195, 196, 198, 199, 202,
-        206, 208, 209, 210, 212, 214, 215, 217, 220, 221, 222, 223, 224, 228,
-        230, 231, 232, 233, 234, 237, 998, 999
+        3, 10, 15, 17, 22, 24, 25, 27, 29, 31, 42, 43, 44, 45, 50, 59, 60, 66,
+        70, 72, 73, 74, 75, 77, 78, 79, 84, 87, 88, 89, 93, 95, 119, 121, 123,
+        124, 127, 133, 140, 142, 143, 145, 147, 148, 149, 152, 157, 165, 166,
+        172, 176, 177, 179, 180, 181, 186, 187, 188, 189, 191, 199, 202, 206,
+        209, 210, 215, 221, 222, 224, 233, 234, 237,
     }
 
     if df_member.shape[1] == 5:
@@ -741,13 +740,11 @@ def _create_df(table):
             lambda x: [True if spec in SPECIALISTS else False for spec in x]
         )
         df_member["PRA_ID"] = df_member.apply(
-            lambda x: ",".join(
-                [
-                    str(pra)
+            lambda x: [
+                    int(pra)
                     for i, pra in enumerate(x["PRA_ID"])
                     if x["SPEC_ID"][i]
-                ]
-            ),
+                ],
             axis=1,
         )
         df_member = (
@@ -764,16 +761,14 @@ def _create_df(table):
             .reset_index()
         )
         df_member["SPEC_ID"] = df_member["SPEC_ID"].map(
-            lambda x: [True if spec in SPECIALISTS else False for spec in x]
+            lambda x: [spec in SPECIALISTS for spec in x]
         )
         df_member["PRA_ID"] = df_member.apply(
-            lambda x: ",".join(
-                [
-                    str(pra)
+            lambda x: [
+                    int(pra)
                     for i, pra in enumerate(x["PRA_ID"])
                     if x["SPEC_ID"][i]
-                ]
-            ),
+                ],
             axis=1,
         )
         df_member = (
@@ -1176,3 +1171,8 @@ def _update_indicators(model):
     )
 
     print("Time elapase: " + str(datetime.now() - start_time))
+
+
+def _unique_keeping_order(iterable):
+    seen = set()
+    return [x for x in iterable if not (x in seen or seen.add(x))]
