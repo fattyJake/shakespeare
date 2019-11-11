@@ -389,17 +389,6 @@ def detect_members(
             "rb",
         )
     )
-    indicators = pickle.load(
-        open(
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                r"pickle_files",
-                r"indicators",
-                "indicators_{}".format(model),
-            ),
-            "rb",
-        )
-    )
     mappings = pickle.load(
         open(
             os.path.join(
