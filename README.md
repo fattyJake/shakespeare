@@ -16,21 +16,21 @@ To download built **shakespeare** wheel files:
 
 | Build Type      | Status | Artifacts |
 | ---             | ---    | ---       |
-| **Linux**   | [![Status](imgs/linux-build.svg)]() | [Py3 wheel](https://www.inovalon.com/) |
-| **Windows** | [![Status](imgs/win-build.svg)]() | [Py3 wheel](https://www.inovalon.com/) |
+| **Linux**   | [![Status](imgs/linux-build.svg)]() | [Py3 wheel](https://github.com/fattyJake/shakespeare/releases/download/2.6.0/shakespeare-2.6.0-py3-none-manylinux1_x86_64.whl) |
+| **Windows** | [![Status](imgs/win-build.svg)]() | [Py3 wheel](https://github.com/fattyJake/shakespeare/releases/download/2.6.0/shakespeare-2.6.0-py3-none-win_amd64.whl) |
 
 Please
 
 To install on Linux machine:
 
 ```
-$ pip install shakespeare-2.5.0-py3-manylinux1_x86_64.whl
+$ pip install shakespeare-2.6.0-py3-none-manylinux1_x86_64.whl
 ```
 
 To install on Windows machine:
 
 ```
-$ pip install shakespeare-2.5.0-py3-win_amd64.whl
+$ pip install shakespeare-2.6.0-py3-none-win_amd64.whl
 ```
 
 Or install from source
@@ -44,9 +44,11 @@ $ python setup.py install
 ### 1. deploy
 
 ```python
-shakespeare.detect(payer,server,memberID_list=None,date_start=None,date_end=None,file_date_lmt=None,
-                   mem_date_start=None,mem_date_end=None,model=63,auto_update=False,threshold=0,
-                   output_path=None,get_indicators=False,top_n_indicator=5):
+shakespeare.detect(
+    payer, server, memberID_list=None, date_end=None, file_date_lmt=None,
+    mem_date_start=None, mem_date_end=None, model=63, auto_update=False,
+    threshold=0, output_path=None, get_indicators=False, top_n_indicator=5
+):
 ```
 
 ```deploy``` main functions detects the HCCs patients may have, and supporting evidence, given a batch of patient's info.
@@ -74,19 +76,28 @@ shakespeare.detect(payer,server,memberID_list=None,date_start=None,date_end=None
 ##### Examples
 ```python
 >>> from shakespeare import detect
->>> detect(payer="CD_GATEWAY", server="CARABWDB06", date_start='2017-01-01', date_end='2017-12-31',
-           threshold=0.1, top_n_indicator=5, get_indicators=True)
+>>> detect(
+        payer="CD_GATEWAY",
+        server="CARABWDB06",
+        date_start='2017-01-01',
+        date_end='2017-12-31',
+        threshold=0.1,
+        top_n_indicator=5,
+        get_indicators=True
+    )
 ```
 ```
-    [(1874863, 'HCC100', 0.6826, False,
-      ['ICD10-I6789', 'CPT-70450', 'CPT-70551', 'ICD10-I679', 'ICD10-R0989'],
-      [260407786, 238479950, 261261633, 263391390, 260296947],
-      [0.014031, 0.011159, 0.008204, 0.003258, 0.002997]),
-     ...
-     (2002971, 'HCC114', 0.1319, False,
-      ['ICD10-J189', 'CPT-99291', 'CPT-99232', 'ICD10-J90', 'CPT-99223'],
-      [265224944, 265150570, 265367997, 264964282, 264567584],
-      [0.031377, 0.009218, 0.009105, 0.0043, 0.003366])]
+    [
+        (33330, 'HCC19', 0.9041, 0.9800, 0,
+         ['HCPCS-A5500', 'CPT-82043', 'ICD10-I10', 'CPT-83036', 'ICD10-E785'],
+         [167816,174530,219484],
+         [1.4374, 0.7924, 0.4818, 0.38, 0.2694]),
+        ...
+        (312068, 'HCC114', 0.6505, 0.9176, 1,
+         ['ICD10-J189', 'ICD10Proc-5A1955Z', 'ICD10-Z4682', 'CPT-99233', 'ICD10-R918'],
+         [114646, 118574, 118237, 24822, 149849, 14239],
+         [1.8562, 1.5598, 0.8454, 0.6191, 0.6101])
+    ]
 ```
 
 ### 2. update
@@ -125,8 +136,6 @@ Training HCC96
 Training HCC99
 Time elapase: 05:08:24.738294
 
-Updating new global supporting evidences...
-Time elapase: 0:00:06.009842
 ############################ Finished Training Model 63 ###########################
 ```
 
@@ -155,9 +164,11 @@ This module contains tools for interactive with Inovalon CARA databases.
 #### function batch_member_codes
 
 ```python
-shakespeare.fetch_db.batch_member_codes(payer='CD_HEALTHFIRST', server='CARABWDB03', memberIDs=None,
-                                        date_start=None, date_end=None, file_date_lmt=None,
-                                        mem_date_start=None, mem_date_end=None, model=63, get_client_id=True)
+shakespeare.fetch_db.batch_member_codes(
+    payer='CD_HEALTHFIRST', server='CARABWDB03', memberIDs=None,
+    date_start=None, date_end=None, file_date_lmt=None,
+    mem_date_start=None, mem_date_end=None, model=63, get_client_id=True
+)
 ```
 
 Retrieve a list of members' claim codes.
@@ -230,7 +241,9 @@ This module contains tools for plot classification model performance.
 #### function plot_coefficients
 
 ```python
-shakespeare.visualizations.plot_coefficients(classifier,variables,name,n=50,bottom=False,save_name=None)
+shakespeare.visualizations.plot_coefficients(
+    classifier,variables,name,n=50,bottom=False,save_name=None
+)
 ```
 
 ##### Parameters
@@ -288,7 +301,9 @@ enid.visualizations.plot_performance(out_true, out_pred, save_name=None)
 #### function plot_comparison
 
 ```python
-shakespeare.visualizations.plot_comparison(y_true, y_score_1, y_score_2, name_1, name_2, thre=0.5, save_name=None)
+shakespeare.visualizations.plot_comparison(
+    y_true, y_score_1, y_score_2, name_1, name_2, thre=0.5, save_name=None
+)
 ```
 
 ##### Parameters
