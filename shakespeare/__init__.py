@@ -15,7 +15,7 @@
 #
 # Authors:  William Kinsman, Chenyu (Oliver) Ha, Harshal Samant, Yage Wang
 # Created:  11.02.2017
-# Version:  2.5.0
+# Version:  2.6.0
 ###############################################################################
 
 
@@ -152,31 +152,33 @@ def detect(
     Examples
     --------
     >>> from shakespeare import detect
-    >>> detect(payer="CD_GATEWAY",
-               server="CARABWDB06",
-               date_start='2017-01-01',
-               date_end='2017-12-31',
-               threshold=0.1,
-               top_n_indicator=5,
-               get_indicators=True)
-        [(1874863, 'HCC100', 0.6826, False,
-          ['ICD10-I6789', 'CPT-70450', 'CPT-70551', 'ICD10-I679',
-           'ICD10-R0989'],
-          [260407786, 238479950, 261261633, 263391390, 260296947],
-          [0.014031, 0.011159, 0.008204, 0.003258, 0.002997]),
-         (1875152, 'HCC100', 0.7459, False,
-          ['ICD10-I6789', 'CPT-70450', 'CPT-70551', 'ICD10-G459', 'CPT-70496'],
-          [244335010, 245688342, 245688341, 251636401, 246095758],
-          [0.014031,  0.011159, 0.008204, 0.004636, 0.002898]),
+    >>> detect(
+            payer="CD_GATEWAY",
+            server="CARABWDB06",
+            date_start='2017-01-01',
+            date_end='2017-12-31',
+            threshold=0.9,
+            top_n_indicator=5,
+            get_indicators=True
+        )
+
+        [(33330, 'HCC19', 0.9041, 0.9800, 0,
+          ['HCPCS-A5500', 'CPT-82043', 'ICD10-I10', 'CPT-83036', 'ICD10-E785'],
+          [167816,174530,219484],
+          [1.4374, 0.7924, 0.4818, 0.38, 0.2694]),
+         (33333, 'HCC19', 0.8445, 0.9668,, 0,
+          ['NDC9-000882219', 'ICD10-I10', 'CPT-82043', 'CPT-83036', 'ICD10-E039'],
+          [11199,164276,152785],
+          [1.3392, 0.6136, 0.5779, 0.4449, 0.3895]),
          ...
-         (2002308, 'HCC114', 0.131, False,
-          ['ICD10-J189', 'CPT-99233', 'CPT-99232', 'CPT-99223', 'ICD10-R918'],
-          [264730331, 264730331, 264787243, 265172978, 265317623],
-          [0.031377, 0.012256, 0.009105, 0.003366, 0.001848]),
-         (2002971, 'HCC114', 0.1319, False,
-          ['ICD10-J189', 'CPT-99291', 'CPT-99232', 'ICD10-J90', 'CPT-99223'],
-          [265224944, 265150570, 265367997, 264964282, 264567584],
-          [0.031377, 0.009218, 0.009105, 0.0043, 0.003366])]
+         (111382, 'HCC114', 0.6686, 0.9226, 1,
+          ['ICD10-J189', 'ICD10Proc-5A1955Z', 'ICD10-R918', 'ICD10-Z4682', 'ICD10-Z66'],
+          [123838, 164643, 176622, 76237, 83652],
+          [1.987, 1.0033, 0.6202, 0.5484, 0.4784]),
+         (312068, 'HCC114', 0.6505, 0.9176, 1,
+          ['ICD10-J189', 'ICD10Proc-5A1955Z', 'ICD10-Z4682', 'CPT-99233', 'ICD10-R918'],
+          [114646, 118574, 118237, 24822, 149849, 14239],
+          [1.8562, 1.5598, 0.8454, 0.6191, 0.6101])]
     """
 
     # initialize
@@ -335,28 +337,30 @@ def detect_members(
     Examples
     --------
     >>> from shakespeare import detect_members
-    >>> detect_members(table,
-                       threshold=0.1,
-                       top_n_indicator=5,
-                       get_indicators=True)
-        [(1874863, 'HCC100', 0.6826, False,
-          ['ICD10-I6789', 'CPT-70450', 'CPT-70551', 'ICD10-I679',
-            'ICD10-R0989'],
-          [260407786, 238479950, 261261633, 263391390, 260296947],
-          [0.014031, 0.011159, 0.008204, 0.003258, 0.002997]),
-         (1875152, 'HCC100', 0.7459, False,
-          ['ICD10-I6789', 'CPT-70450', 'CPT-70551', 'ICD10-G459', 'CPT-70496'],
-          [244335010, 245688342, 245688341, 251636401, 246095758],
-          [0.014031,  0.011159, 0.008204, 0.004636, 0.002898]),
+    >>> detect_members(
+            table,
+            threshold=0.9,
+            top_n_indicator=5,
+            get_indicators=True
+        )
+
+        [(33330, 'HCC19', 0.9041, 0.9800, 0,
+          ['HCPCS-A5500', 'CPT-82043', 'ICD10-I10', 'CPT-83036', 'ICD10-E785'],
+          [167816,174530,219484],
+          [1.4374, 0.7924, 0.4818, 0.38, 0.2694]),
+         (33333, 'HCC19', 0.8445, 0.9668,, 0,
+          ['NDC9-000882219', 'ICD10-I10', 'CPT-82043', 'CPT-83036', 'ICD10-E039'],
+          [11199,164276,152785],
+          [1.3392, 0.6136, 0.5779, 0.4449, 0.3895]),
          ...
-         (2002308, 'HCC114', 0.131, False,
-          ['ICD10-J189', 'CPT-99233', 'CPT-99232', 'CPT-99223', 'ICD10-R918'],
-          [264730331, 264730331, 264787243, 265172978, 265317623],
-          [0.031377, 0.012256, 0.009105, 0.003366, 0.001848]),
-         (2002971, 'HCC114', 0.1319, False,
-          ['ICD10-J189', 'CPT-99291', 'CPT-99232', 'ICD10-J90', 'CPT-99223'],
-          [265224944, 265150570, 265367997, 264964282, 264567584],
-          [0.031377, 0.009218, 0.009105, 0.004300, 0.003366])]
+         (111382, 'HCC114', 0.6686, 0.9226, 1,
+          ['ICD10-J189', 'ICD10Proc-5A1955Z', 'ICD10-R918', 'ICD10-Z4682', 'ICD10-Z66'],
+          [123838, 164643, 176622, 76237, 83652],
+          [1.987, 1.0033, 0.6202, 0.5484, 0.4784]),
+         (312068, 'HCC114', 0.6505, 0.9176, 1,
+          ['ICD10-J189', 'ICD10Proc-5A1955Z', 'ICD10-Z4682', 'CPT-99233', 'ICD10-R918'],
+          [114646, 118574, 118237, 24822, 149849, 14239],
+          [1.8562, 1.5598, 0.8454, 0.6191, 0.6101])]
     """
     print("Start: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
@@ -600,8 +604,6 @@ def update(model, year_of_service):
     Training HCC99
     Time elapase: 05:08:24.738294
     
-    Updating new global supporting evidences...
-    Time elapase: 0:00:06.009842
     ######################## Finished Training Model 63 #######################
     """
     assert isinstance(model, int) and year_of_service > 2010, print(
@@ -617,7 +619,6 @@ def update(model, year_of_service):
     _update_mappings(model)
     _update_variables(training_set, model)
     _update_ensembles(training_set, model)
-    _update_indicators(model)
     print(
         "############################ Finished Training Model "
         + str(model)
@@ -687,22 +688,6 @@ def delete(model):
                 r"pickle_files",
                 r"variables",
                 "variables_{}".format(model),
-            )
-        )
-    if os.path.exists(
-        os.path.join(
-            os.path.dirname(os.path.realpath(__file__)),
-            r"pickle_files",
-            r"indicators",
-            "indicators_{}".format(model),
-        )
-    ):
-        os.remove(
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                r"pickle_files",
-                r"indicators",
-                "indicators_{}".format(model),
             )
         )
 
@@ -796,7 +781,7 @@ def _shuffle(positives, negatives, member_vectors):
     Partition whole dataset randomly into training set, development set and
     test set (20%)
     """
-    # Prepare DL dateset
+    # Prepare ML dateset
     y = []
     X = []
     for member in positives:
@@ -1137,38 +1122,6 @@ def _update_ensembles(member_codes, model):
 
     del member_conditions, member_vectors, variables
     gc.collect()
-
-    print("Time elapase: " + str(datetime.now() - start_time))
-
-
-def _update_indicators(model):
-    print("\nUpdating new global supporting evidences...")
-    start_time = datetime.now()
-
-    clf = pickle.load(
-        open(
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                r"pickle_files",
-                r"ensembles",
-                "ensemble_{}".format(model),
-            ),
-            "rb",
-        )
-    )
-    coefs = {HCC: _get_coef(c["classifier"]) for HCC, c in clf.items()}
-    pickle.dump(
-        coefs,
-        open(
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                r"pickle_files",
-                r"indicators",
-                "indicators_{}".format(model),
-            ),
-            "wb",
-        ),
-    )
 
     print("Time elapase: " + str(datetime.now() - start_time))
 
