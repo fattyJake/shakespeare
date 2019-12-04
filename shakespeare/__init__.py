@@ -492,8 +492,8 @@ def detect_members(
         ].astype(object)
 
         df_list = []
-        for HCC in indicators.keys():
-            if indicators[HCC] is None:
+        for HCC in ensemble.keys():
+            if ensemble[HCC]['classifier'] is None:
                 continue
 
             explainer = shap.TreeExplainer(
