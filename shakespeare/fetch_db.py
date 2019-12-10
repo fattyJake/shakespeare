@@ -8,6 +8,7 @@
 
 import re
 import pyodbc
+from datetime import datetime
 from .__init__ import _get_model_name
 
 
@@ -155,7 +156,7 @@ def batch_member_codes(
         cursor.execute(
             "\n".join(
                 [
-                    "INSERT INTO #MemberList VALUES ({})".format(str(member))
+                    f"INSERT INTO #MemberList VALUES ({str(member)})"
                     for member in memberIDs
                 ]
             )
@@ -504,3 +505,102 @@ def batch_member_codes(
             set([(i[0], i[2], i[3], i[5] + "-" + i[6]) for i in table])
         )
     return table
+
+
+def batch_member_monthly_report(
+    payer="CD_HEALTHFIRST",
+    server="CARABWDB03",
+    memberIDs=None,
+    year_month=None
+):
+    """
+    Retrieve MMR info identified by CMS
+
+    Parameters
+    --------
+    payer : str
+        name of payer table (e.g. 'CD_HEALTHFIRST')
+
+    server : str
+        CARA server on which the payer is located ('CARABWDB03')
+
+    memberIDs : list
+        List of member IDs to fetch
+
+    year_month : str, optional (default: None)
+        as 'YYYY-MM', the payment month (or current month)
+
+    Return
+    --------
+    mmr_table : list
+        list of lists with MMR information
+
+    Examples
+    --------
+    >>> from shakespeare.fetch_db import batch_member_monthly_report
+    >>> batch_member_monthly_report(year_month='2019-06')
+    [[1962093, 1.024999976158142, 1, 81, 0, 0, 0, 0],
+     [1962157, 1.0720000267028809, 0, 67, 0, 0, 0, 0],
+     ...,
+     [2102341, 0.45500001311302185, 0, 66, 0, 0, 0, 0],
+     [2102375, 0.875, 1, 67, 0, 0, 0, 0]]
+    """
+    # initialize
+    cursor = pyodbc.connect(
+        r"DRIVER=SQL Server;" r"SERVER=" + server + ";"
+    ).cursor()
+    if year_month:
+        year_month = str(year_month)
+    else:
+        year_month = str(datetime.today().year) + '-06'
+
+    if memberIDs:
+        cursor.execute("CREATE TABLE #Temp (mem_id INT)")
+        cursor.execute(
+            "\n".join(
+                [
+                    "INSERT INTO #Temp VALUES ({})".format(str(member))
+                    for member in memberIDs
+                ]
+            )
+        )
+        while cursor.nextset():
+            pass
+        cursor.commit()
+
+    sql = (
+        """SELECT mmr.[mem_id]                              AS mem_id,
+            [mmr_FactorA]                                   AS risk_score,
+            [gndr_Code]                                     AS gender,
+            DATEDIFF(hour,mmr_Birthday,'""" + year_month
+            + """-01')/8766                                 AS age,
+            [mmr_Hospice]                                   AS hospice,
+            [mmr_ESRD]                                      AS ESRD,
+            [mmr_AgedDisabledMSP]                           AS disabled,
+            [mmr_Institutional]                             AS institutional
+        FROM """ + payer + """.[dbo].[tbMedicareMMR] mmr
+            LEFT JOIN #Temp t ON mmr.mem_id = t.mem_id
+        WHERE mmr_AdjustReasonCode = 00 AND mmr_PmtMonth = '"""
+        + year_month.replace('-', '') + """'"""
+    )
+    if not memberIDs:
+        sql = re.sub(
+            "LEFT JOIN \#Temp t ON mmr\.mem\_id = t\.mem\_id", "", sql
+        )
+    cursor.execute(sql)
+    return list(
+        [
+            [
+                i[0],
+                i[1],
+                0 if i[2] == "M" else 1,
+                int(i[3]),
+                1 if i[4].strip() else 0,
+                1 if i[5].strip() else 0,
+                1 if i[6].strip() == 'Y' else 0,
+                1 if i[7].strip() else 0
+            ]
+            for i in cursor
+            if i[0]
+        ]
+    )
