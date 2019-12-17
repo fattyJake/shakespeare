@@ -115,7 +115,9 @@ def plot_coefficients(
         barwidth = 0.2
         fig = plt.figure(
             figsize=(
-                int(max([len(v) for v in variables]) / 10) + 3,
+                int(
+                    max([len(v) for v in variables] + [len(name) * 2]) / 10
+                ) + 3,
                 (len(variables) + 1) * barwidth
             )
             # figsize=(5, ((len(variables) + 1) + 2 * spacing) * barwidth)

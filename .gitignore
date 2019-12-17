@@ -3,4 +3,5 @@ ensemble_*
 indicators_*
 mapping_*
 variables_*
+rs_regressor_*
 .DS_STORE
