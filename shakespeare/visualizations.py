@@ -10,30 +10,43 @@ import os
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import shap
 from scipy import stats
 from sklearn.metrics import roc_curve, roc_auc_score, brier_score_loss
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import precision_recall_curve
 
-from . import xgb_coef
-
 
 def plot_coefficients(
-    classifier, variables, name, n=50, bottom=False, save_name=None
+    model,
+    variables,
+    name,
+    shap_mode=False,
+    shap_set=None,
+    n=50,
+    bottom=False,
+    save_name=None
 ):
     """
     Plot all or top n variables in the classifier
 
     Parameters
     --------
-    classifier : XGBClassifier or CalibratedClassifierCV
-        the classifier to use in the ensemble
+    model : Scikit-Learn API like model or CalibratedClassifierCV
+        the model to use in the ensemble
 
     variables : list
         variable space to map plot axis
 
     name : str
         HCC name of the coefficient
+
+    shap_mode : boolean, option (default: False)
+        if True, must provide shap_set and the function will calculate mean
+        absolute SHAP values as coefficients
+
+    shap_set : numpy 2D array, optional (default: None)
+        the input X matrix to calculate shap value
 
     n : int, optional (default: 50)
         returns top/bottom n variables
@@ -52,22 +65,33 @@ def plot_coefficients(
     >>> plot_coefficients(xgb, variables, name='HCC22', n=100)
     """
     # initialize
-    if not classifier:
+    if not model:
         return
-    if "XGB" in str(classifier.__str__):
-        coefs = xgb_coef.coef(classifier)
-    elif "CalibratedClassifierCV" in str(classifier.__str__):
-        coefs = [
-            xgb_coef.coef(c.base_estimator)
-            for c in classifier.calibrated_classifiers_
-        ]
-        coefs = np.sum(coefs, axis=0) / classifier.cv
+    if shap_mode:
+        assert isinstance(shap_set, np.ndarray), "ValueError: when shap_mode "\
+            + "enabled, shap_set must be provided as numpy 2d array, "\
+            + f"got {shap_set.__str__} instead."
+
+    if "CalibratedClassifierCV" in str(model.__str__):
+        if shap_mode:
+            explainer = shap.TreeExplainer(
+                model.calibrated_classifiers_c.base_estimator
+            )
+            shap_values = explainer.shap_values(shap_set)
+            coefs = np.mean(np.abs(shap_values), axis=0)
+        else:
+            coefs = [
+                c.feature_importances_
+                for c in model.calibrated_classifiers_.base_estimator
+            ]
+        coefs = np.sum(coefs, axis=0) / model.cv
     else:
-        coefs = None
-        raise ValueError(
-            "model only accept XGBClassifier or CalibratedClassifierCV, "
-            + f"got {str(classifier.__str__)} instead."
-        )
+        if shap_mode:
+            explainer = shap.TreeExplainer(model)
+            shap_values = explainer.shap_values(shap_set)
+            coefs = np.mean(np.abs(shap_values), axis=0)
+        else:
+            coefs = model.feature_importances_
 
     if isinstance(coefs, np.ndarray):
         coefs = coefs.tolist()
@@ -88,8 +112,9 @@ def plot_coefficients(
         list(t) for t in zip(*sorted(zip(coefs, variables), reverse=True))
     )
     if bottom:
-        variables = variables[0:n] + variables[-n:]
-        coefs = coefs[0:n] + coefs[-n:]
+        if len(variables) > n * 2:
+            variables = variables[0:n] + variables[-n:]
+            coefs = coefs[0:n] + coefs[-n:]
     else:
         variables = variables[0:n]
         coefs = coefs[0:n]
@@ -252,9 +277,9 @@ def plot_numerics(out_true, out_pred, log=False, save_name=None):
 
     Examples
     --------
-    >>> from shakespeare.visualizations import plot_performance
-    >>> y_true = [0, 1, 1, 0]
-    >>> y_prob = [0.0000342, 0.99999974, 0.84367323, 0.5400342]
+    >>> from shakespeare.visualizations import plot_numerics
+    >>> y_true = [1, 2, 3, 4]
+    >>> y_prob = [0.9, 2.2, 2.5, 4.1]
     >>> plot_numerics(y_true, y_prob, log=True)
     """
     with plt.style.context("ggplot"):

@@ -248,9 +248,11 @@ shakespeare.visualizations.plot_coefficients(
 
 ##### Parameters
 
-* ```classifier``` : XGBClassifier or CalibratedClassifierCV. The classifier to use in the ensemble
+* ```model``` : Scikit-Learn API like model or CalibratedClassifierCV.
 * ```variables``` : list. Variable space to map plot axis
 * ```name``` : str. HCC name of the coefficient
+* ```shap_mode``` : boolean, option (default: False). If True, must provide shap_set and the function will calculate mean absolute SHAP values as coefficients.
+* ```shap_set``` : numpy 2D array, optional (default: None). The input X matrix to calculate SHAP value.
 * ```n``` : int, optional (default: 50). Returns top/bottom n variables
 * ```bottom``` : boolean, optional (default: False). Returns bottom n variables
 * ```save_name``` : str, optional (default: None). The path of output image; if provided, save the plot to disk
@@ -326,6 +328,30 @@ shakespeare.visualizations.plot_comparison(
 
 <p align="center">
   <img src="imgs/lg_vs_xgb.png" class="center" height="200"/>
+</p>
+
+#### function plot_numerics
+
+```python
+shakespeare.visualizations.plot_numerics(out_true, out_pred, log=False, save_name=None)
+```
+
+##### Parameters
+* ```out_true``` : list or 1-D array. List of ground truth y
+* ```out_pred``` : list or 1-D array. List of y-hat
+* ```log``` : boolean, optional (default: False). If True, tranform y-axis as logged for visualization purpose
+* ```save_name``` : str, optional (default: None). The path of output image; if provided, save the plot to disk
+
+##### Examples
+```python
+>>> from shakespeare.visualizations import plot_numerics
+>>> y_true = [1, 2, 3, 4]
+>>> y_prob = [0.9, 2.2, 2.5, 4.1]
+>>> plot_numerics(y_true, y_prob, log=True)
+```
+
+<p align="center">
+  <img src="imgs/63/risk_score.png" class="center" height="500"/>
 </p>
 
 ## For more information
