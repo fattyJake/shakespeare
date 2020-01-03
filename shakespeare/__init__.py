@@ -68,7 +68,6 @@ from sklearn.utils import shuffle
 from . import fetch_db
 from . import vectorizers
 from . import visualizations
-from . import xgb_coef
 
 
 def detect(
@@ -751,18 +750,6 @@ def _create_df(table):
             .reset_index()
         )
     return df_member
-
-
-def _get_coef(classifier):
-    if "XGBClassifier" in str(classifier.__str__):
-        return xgb_coef.coef(classifier)
-    if "CalibratedClassifierCV" in str(classifier.__str__):
-        coefs = [
-            xgb_coef.coef(c.base_estimator)
-            for c in classifier.calibrated_classifiers_
-        ]
-        coefs = np.sum(coefs, axis=0) / classifier.cv
-        return coefs
 
 
 def _shuffle(positives, negatives, member_vectors):
