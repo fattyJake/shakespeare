@@ -19,35 +19,13 @@
 ###############################################################################
 
 
-# check for dependancies on import
+# system libs
 import os
-from pkgutil import iter_modules
-
-
-def module_exists(module_name):
-    return module_name in (name for loader, name, ispkg in iter_modules())
-
-
-for module in [
-    "scipy",
-    "numpy",
-    "pandas",
-    "matplotlib",
-    "sklearn",
-    "pyodbc",
-    "xgboost",
-]:
-    if not module_exists(module):
-        raise ImportError(
-            "\nRequired dependencies not detected. Please install: "
-            + ", ".join(module)
-        )
 
 mingw_path = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), r"mingw64", r"bin"
 )
 os.environ["PATH"] = mingw_path + ";" + os.environ["PATH"]
-
 
 import pickle
 import itertools
@@ -55,13 +33,13 @@ import operator
 import gc
 from datetime import datetime
 
+# data $ machine learning libs
 import numpy as np
 import pandas as pd
+import shap
 from scipy.sparse import csr_matrix, vstack
 
-import shap
-from sklearn.utils import shuffle
-
+# package libs
 from . import fetch_db
 from . import vectorizers
 from . import visualizations
@@ -80,7 +58,6 @@ def detect(
     model=63,
     auto_update=False,
     threshold=0,
-    output_path=None,
     get_indicators=False,
     top_n_indicator=5,
 ):
@@ -126,10 +103,6 @@ def detect(
         
     threshold : float, optional (default: 0)
         a float between 0 and 1 for filtering output confidence above it
-        
-    output_path : str, optional (default: None)
-        if not None, provided with the path of output EXCEL sheet to store HCC
-        probs, financial values for all member list
         
     get_indicators : boolean, optional (default: False)
         if False, only return probabilities for each HCC each member; if True,
@@ -190,7 +163,7 @@ def detect(
                 )
             }
         )
-    memberID_list = shuffle(memberID_list)
+    memberID_list = list(set(memberID_list))
 
     if date_end:
         year = int(date_end[:4])
@@ -235,7 +208,6 @@ def detect(
             model,
             auto_update,
             threshold,
-            output_path,
             get_indicators,
             top_n_indicator,
         )
@@ -248,8 +220,8 @@ def detect(
         print(f"Total batches: {len(memberID_list)}")
         for batch, sub_mem in enumerate(memberID_list):
             print(
-                f"###################### Processing batch {batch+1} #########"
-                f"#############"
+                f"###################### Processing batch {batch+1} "
+                + "######################"
             )
             table = fetch_db.batch_member_codes(
                 payer=payer,
@@ -271,7 +243,6 @@ def detect(
                     model,
                     auto_update,
                     threshold,
-                    output_path,
                     get_indicators,
                     top_n_indicator,
                 )
@@ -287,7 +258,6 @@ def detect_members(
     model=63,
     auto_update=False,
     threshold=0,
-    output_path=None,
     get_indicators=False,
     top_n_indicator=5,
 ):
@@ -311,10 +281,6 @@ def detect_members(
         
     threshold : float, optional (default: 0)
         a float between 0 and 1 for filtering output confidence above it
-        
-    output_path : str, optional (default: None)
-        if not None, provided with the path of output EXCEL sheet to store HCC
-        probs, financial values for all member list
         
     get_indicators : boolean, optional (default: False)
         if False, only return probabilities for each HCC each member; if True,
@@ -366,7 +332,7 @@ def detect_members(
             os.path.dirname(os.path.realpath(__file__)),
             r"pickle_files",
             r"ensembles",
-            "ensemble_{}".format(model),
+            f"ensemble_{model}",
         )
     ):
         if auto_update:
@@ -381,7 +347,7 @@ def detect_members(
                 os.path.dirname(os.path.realpath(__file__)),
                 r"pickle_files",
                 r"variables",
-                "variables_{}".format(model),
+                f"variables_{model}",
             ),
             "rb",
         )
@@ -392,7 +358,7 @@ def detect_members(
                 os.path.dirname(os.path.realpath(__file__)),
                 r"pickle_files",
                 r"mappings",
-                "mapping_{}".format(model),
+                f"mapping_{model}",
             ),
             "rb",
         )
@@ -403,7 +369,7 @@ def detect_members(
                 os.path.dirname(os.path.realpath(__file__)),
                 r"pickle_files",
                 r"ensembles",
-                "ensemble_{}".format(model),
+                f"ensemble_{model}",
             ),
             "rb",
         )
@@ -447,13 +413,6 @@ def detect_members(
     gc.collect()
 
     df_vector = df_vector.dropna(axis=1, how="any")
-
-    if output_path:
-        print("Saving results...")
-        # df_vector = df_vector.sort_values('PRED_VALUE', ascending=False)
-        df_vector.to_excel(
-            output_path, sheet_name="output", header=True, index=False
-        )
 
     df_condition = pd.melt(
         df_vector,

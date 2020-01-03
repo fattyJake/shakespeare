@@ -12,19 +12,17 @@ import re
 import pickle
 import itertools
 import operator
-from collections import Counter
 import gc
+from collections import Counter
 from datetime import datetime
 
-# data libs
+# data & machine learning libs
 import pyodbc
 import pandas as pd
-from scipy.sparse import csr_matrix, vstack
-
-# machine learning libs
 from xgboost import XGBClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.utils import shuffle
+from scipy.sparse import csr_matrix, vstack
 
 # package libs
 from . import fetch_db

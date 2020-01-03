@@ -9,7 +9,7 @@
 import re
 import pyodbc
 from datetime import datetime
-from .__init__ import _get_model_name
+from .utils import get_model_name
 
 
 def get_members(payer, server="CARABWDB03", date_start=None, date_end=None):
@@ -77,7 +77,6 @@ def batch_member_codes(
     mem_date_start=None,
     mem_date_end=None,
     model=63,
-    get_client_id=True,
 ):
     """
     Retrieve a list of members' codes
@@ -90,7 +89,7 @@ def batch_member_codes(
     server : str
         CARA server on which the payer is located ('CARABWDB03')
 
-    memberID_list : list, optional (default: None)
+    memberIDs : list, optional (default: None)
         list of memberIDs (e.g. [1120565]); if None, get results from all
         members under payer
 
@@ -114,9 +113,6 @@ def batch_member_codes(
         an integer of model version ID in
         MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only
         support 'CDPS', 'CMS' and 'HHS'
-
-    get_client_id : boolean, optional (default: True)
-        whether return member client IDs
 
     Return
     --------
@@ -149,7 +145,7 @@ def batch_member_codes(
         str(mem_date_start),
         str(mem_date_end),
     )
-    model_name = _get_model_name(model)
+    model_name = get_model_name(model)
 
     if memberIDs:
         cursor.execute("CREATE TABLE #MemberList (mem_id INT)")
@@ -170,13 +166,13 @@ def batch_member_codes(
     SET NOCOUNT ON
 
     BEGIN TRY DROP TABLE #Temp END TRY BEGIN CATCH END CATCH
-    SELECT tbm.mem_id, mem_ClientMemberID
+    SELECT tbm.mem_id
     INTO #Temp
     FROM """
         + payer
         + """.dbo.tbMember tbm
         INNER JOIN #MemberList m ON tbm.mem_id = m.mem_id
-    WHERE mem_ClientMemberID IS NOT NULL AND dateInserted BETWEEN '"""
+    WHERE dateInserted BETWEEN '"""
         + mem_date_start
         + """' AND '"""
         + mem_date_end
@@ -185,7 +181,7 @@ def batch_member_codes(
     )
     if not memberIDs:
         sql = re.sub(
-            r"INNER JOIN \#MemberList m ON tbm\.mem\_id = m.mem\_id", "", sql
+            r"INNER JOIN #MemberList m ON tbm\.mem_id = m.mem_id", "", sql
         )
     sql = re.sub(r"AND dateInserted BETWEEN 'None' AND 'None'", "", sql)
     cursor.execute(sql)
@@ -201,14 +197,13 @@ def batch_member_codes(
     BEGIN TRY DROP TABLE #mrr_temp END TRY BEGIN CATCH END CATCH
     IF OBJECT_ID('"""
         + re.sub(
-            r"CD\_",
+            r"CD_",
             "CARA2_Results_" + ("HIX_" if "HHS" in model_name else ""),
             payer,
         )
         + """.dbo.MRRData') IS NOT NULL
     BEGIN
         SELECT e.mem_id AS MemberID,
-            tp.mem_ClientMemberID               AS MemberClientID,
             e.pra_id                            AS PraID,
             pra.spec_id                         AS SpecID,
             mrr_StartDate                       AS ServiceDate,
@@ -219,13 +214,13 @@ def batch_member_codes(
     	INTO #mrr_temp
         FROM """
         + re.sub(
-            r"CD\_",
+            r"CD_",
             "CARA2_Results_" + ("HIX_" if "HHS" in model_name else ""),
             payer,
         )
         + """.dbo.MRRData e WITH(NOLOCK)
-                        INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-                        LEFT JOIN """
+            INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
+            LEFT JOIN """
         + payer
         + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
                         """
@@ -239,7 +234,7 @@ def batch_member_codes(
     END"""
     )
     sql = re.sub(
-        r"WHERE (e|p)\.[a-zA-Z\_]+ BETWEEN 'None' AND 'None'", "", sql
+        r"WHERE [ep]\.[a-zA-Z_]+ BETWEEN 'None' AND 'None'", "", sql
     )
 
     cursor.execute(sql)
@@ -251,7 +246,6 @@ def batch_member_codes(
     IF OBJECT_ID('tempdb..#mrr_temp') IS NULL
     BEGIN
         CREATE TABLE #mrr_temp (MemberID INT,
-            MemberClientID VARCHAR(50),
             PraID INT,
             SpecID INT,
             ServiceDate DATE,
@@ -266,7 +260,6 @@ def batch_member_codes(
     sql = (
         """
     SELECT e.mem_id                                         AS MemberID,
-        tp.mem_ClientMemberID                               AS MemberClientID,
         e.pra_id                                            AS PraID,
         pra.spec_id                                         AS SpecID,
         ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
@@ -277,14 +270,14 @@ def batch_member_codes(
     FROM """
         + payer
         + """.dbo.tbEncounter e WITH(NOLOCK)
-                    INNER JOIN """
+            INNER JOIN """
         + payer
         + """.dbo.tbEncounterDiagnosis ed ON e.enc_id = ed.enc_id
-    				INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-                    LEFT JOIN """
+            INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
+            LEFT JOIN """
         + payer
         + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
-                    INNER JOIN """
+            INNER JOIN """
         + payer
         + """.dbo.tbFile f WITH(NOLOCK)
             ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
@@ -298,7 +291,6 @@ def batch_member_codes(
     UNION
     --Bring in diagnoses codes from RAPS Returns
     SELECT e.mem_id                                          AS MemberID,
-        tp.mem_ClientMemberID                                AS MemberClientID,
         -1                                                   AS PraID,
         -1                                                   AS SpecID,
         raps_DOSfrom                                         AS ServiceDate,
@@ -308,8 +300,8 @@ def batch_member_codes(
     FROM """
         + payer
         + """.dbo.tbMedicareRapsReturn e WITH(NOLOCK)
-                    INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-                    INNER JOIN """
+            INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
+            INNER JOIN """
         + payer
         + """.dbo.tbFile f WITH(NOLOCK)
             ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
@@ -327,7 +319,6 @@ def batch_member_codes(
     		AND ISNULL(e.risk_assessment_code_error, '') = ''
     UNION
     SELECT e.mem_id                                         AS MemberID,
-        tp.mem_ClientMemberID                               AS MemberClientID,
         e.pra_id                                            AS PraID,
         pra.spec_id                                         AS SpecID,
         ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
@@ -336,14 +327,14 @@ def batch_member_codes(
     FROM """
         + payer
         + """.dbo.tbEncounter e WITH(NOLOCK)
-                    INNER JOIN """
+            INNER JOIN """
         + payer
         + """.dbo.tbEncounterCPT eCPT ON e.enc_id = eCPT.enc_id
-    				INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-                    LEFT JOIN """
+            INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
+            LEFT JOIN """
         + payer
         + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
-                    INNER JOIN """
+            INNER JOIN """
         + payer
         + """.dbo.tbFile f WITH(NOLOCK)
             ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
@@ -356,7 +347,6 @@ def batch_member_codes(
         + """'
     UNION
     SELECT e.mem_id                                         AS MemberID,
-        tp.mem_ClientMemberID                               AS MemberClientID,
         e.pra_id                                            AS PraID,
         pra.spec_id                                         AS SpecID,
         ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
@@ -365,14 +355,14 @@ def batch_member_codes(
     FROM """
         + payer
         + """.dbo.tbEncounter e WITH(NOLOCK)
-                    INNER JOIN """
+            INNER JOIN """
         + payer
         + """.dbo.tbEncounterDRG eDRG ON e.enc_id = eDRG.enc_id
-    				INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-                    LEFT JOIN """
+            INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
+            LEFT JOIN """
         + payer
         + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
-                    INNER JOIN """
+            INNER JOIN """
         + payer
         + """.dbo.tbFile f WITH(NOLOCK)
             ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
@@ -385,7 +375,6 @@ def batch_member_codes(
         + """'
     UNION
     SELECT e.mem_id                                         AS MemberID,
-        tp.mem_ClientMemberID                               AS MemberClientID,
         e.pra_id                                            AS PraID,
         pra.spec_id                                         AS SpecID,
         ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
@@ -394,14 +383,14 @@ def batch_member_codes(
     FROM """
         + payer
         + """.dbo.tbEncounter e WITH(NOLOCK)
-                    INNER JOIN """
+            INNER JOIN """
         + payer
         + """.dbo.tbEncounterHCPCS eHCPCS ON e.enc_id = eHCPCS.enc_id
-    				INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-                    LEFT JOIN """
+            INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
+            LEFT JOIN """
         + payer
         + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
-                    INNER JOIN """
+            INNER JOIN """
         + payer
         + """.dbo.tbFile f WITH(NOLOCK)
             ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
@@ -414,7 +403,6 @@ def batch_member_codes(
         + """'
     UNION
     SELECT e.mem_id                                         AS MemberID,
-        tp.mem_ClientMemberID                               AS MemberClientID,
         e.pra_id                                            AS PraID,
         pra.spec_id                                         AS SpecID,
         ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
@@ -425,14 +413,14 @@ def batch_member_codes(
     FROM """
         + payer
         + """.dbo.tbEncounter e WITH(NOLOCK)
-                    INNER JOIN """
+            INNER JOIN """
         + payer
         + """.dbo.tbEncounterProcedure eProc ON e.enc_id = eProc.enc_id
-    				INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-                    LEFT JOIN """
+            INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
+            LEFT JOIN """
         + payer
         + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
-                    INNER JOIN """
+            INNER JOIN """
         + payer
         + """.dbo.tbFile f WITH(NOLOCK)
             ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
@@ -445,7 +433,6 @@ def batch_member_codes(
         + """'
     UNION
     SELECT p.mem_id                                         AS MemberID,
-        tp.mem_ClientMemberID                               AS MemberClientID,
         p.pra_id                                            AS PraID,
         pra.spec_id                                         AS SpecID,
         pha_ServiceDate                                     AS ServiceDate,
@@ -457,11 +444,11 @@ def batch_member_codes(
                     INNER JOIN """
         + payer
         + """.dbo.tbPharmacyNDC NDC ON p.pha_id = NDC.pha_id
-    				INNER JOIN #Temp tp ON tp.mem_id = p.mem_id
-                    LEFT JOIN """
+            INNER JOIN #Temp tp ON tp.mem_id = p.mem_id
+            LEFT JOIN """
         + payer
         + """.dbo.tbPractitioner pra ON pra.pra_id = p.pra_id
-                    INNER JOIN """
+            INNER JOIN """
         + payer
         + """.dbo.tbFile f WITH(NOLOCK)
             ON f.fil_id = p.fil_id AND f.fil_StartDate <= '"""
@@ -477,33 +464,29 @@ def batch_member_codes(
     """
     )
     sql = re.sub(
-        r"WHERE (e|p)\.[a-zA-Z\_]+ BETWEEN 'None' AND 'None'", "", sql
+        r"WHERE [ep]\.[a-zA-Z_]+ BETWEEN 'None' AND 'None'", "", sql
     )
     sql = re.sub(
-        r"WHERE ISNULL\(e\.enc\_DischargeDate, e\.enc\_ServiceDate\) BETWEEN "\
-            r"'None' AND 'None'",
+        r"WHERE ISNULL\(e\.enc_DischargeDate, e\.enc_ServiceDate\) BETWEEN "
+        + r"'None' AND 'None'",
         "",
         sql,
     )
     sql = re.sub(
         r"INNER JOIN "
         + payer
-        + r"\.dbo\.tbFile f WITH\(NOLOCK\)\s+ON f\.fil_id = (e|p)\.fil_id AND "\
-            r"f\.fil\_StartDate <= 'None'",
+        + r"\.dbo\.tbFile f WITH\(NOLOCK\)\s+ON f\.fil_id = [ep]\.fil_id AND "
+        + r"f\.fil_StartDate <= 'None'",
         "",
         sql,
     )
 
     table = cursor.execute(sql).fetchall()
     cursor.close()
-    if get_client_id:
-        table = list(
-            set([(i[0], i[1], i[2], i[3], i[5] + "-" + i[6]) for i in table])
-        )
-    else:
-        table = list(
-            set([(i[0], i[2], i[3], i[5] + "-" + i[6]) for i in table])
-        )
+
+    table = list(
+        set([(i[0], i[1], i[2], i[4] + "-" + i[5]) for i in table])
+    )
     return table
 
 
@@ -585,7 +568,7 @@ def batch_member_monthly_report(
     )
     if not memberIDs:
         sql = re.sub(
-            "LEFT JOIN \#Temp t ON mmr\.mem\_id = t\.mem\_id", "", sql
+            "LEFT JOIN #Temp t ON mmr\.mem_id = t\.mem_id", "", sql
         )
     cursor.execute(sql)
     return list(
