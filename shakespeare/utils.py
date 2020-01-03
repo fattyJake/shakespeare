@@ -39,62 +39,29 @@ def create_df(table):
         209, 210, 215, 221, 222, 224, 233, 234, 237,
     }
 
-    if df_member.shape[1] == 5:
-        df_member.columns = [
-            "MEMBER",
-            "MEMBER_CLIENT_ID",
-            "PRA_ID",
-            "SPEC_ID",
-            "CODE",
-        ]
-        df_member["PRA_ID"] = df_member["PRA_ID"].fillna(-1)
-        df_member = (
-            df_member.groupby(["MEMBER", "MEMBER_CLIENT_ID", "CODE"])[
-                "PRA_ID", "SPEC_ID"
-            ]
-            .agg(list)
-            .reset_index()
-        )
-        df_member["SPEC_ID"] = df_member["SPEC_ID"].map(
-            lambda x: [True if spec in SPECIALISTS else False for spec in x]
-        )
-        df_member["PRA_ID"] = df_member.apply(
-            lambda x: [
-                    int(pra)
-                    for i, pra in enumerate(x["PRA_ID"])
-                    if x["SPEC_ID"][i]
-                ],
-            axis=1,
-        )
-        df_member = (
-            df_member.groupby(["MEMBER", "MEMBER_CLIENT_ID"])["CODE", "PRA_ID"]
-            .agg(list)
-            .reset_index()
-        )
-    if df_member.shape[1] == 4:
-        df_member.columns = ["MEMBER", "PRA_ID", "SPEC_ID", "CODE"]
-        df_member["PRA_ID"] = df_member["PRA_ID"].fillna(-1)
-        df_member = (
-            df_member.groupby(["MEMBER", "CODE"])["PRA_ID", "SPEC_ID"]
-            .agg(list)
-            .reset_index()
-        )
-        df_member["SPEC_ID"] = df_member["SPEC_ID"].map(
-            lambda x: [spec in SPECIALISTS for spec in x]
-        )
-        df_member["PRA_ID"] = df_member.apply(
-            lambda x: [
-                    int(pra)
-                    for i, pra in enumerate(x["PRA_ID"])
-                    if x["SPEC_ID"][i]
-                ],
-            axis=1,
-        )
-        df_member = (
-            df_member.groupby(["MEMBER"])["CODE", "PRA_ID"]
-            .agg(list)
-            .reset_index()
-        )
+    df_member.columns = ["MEMBER", "PRA_ID", "SPEC_ID", "CODE"]
+    df_member["PRA_ID"] = df_member["PRA_ID"].fillna(-1)
+    df_member = (
+        df_member.groupby(["MEMBER", "CODE"])["PRA_ID", "SPEC_ID"]
+        .agg(list)
+        .reset_index()
+    )
+    df_member["SPEC_ID"] = df_member["SPEC_ID"].map(
+        lambda x: [spec in SPECIALISTS for spec in x]
+    )
+    df_member["PRA_ID"] = df_member.apply(
+        lambda x: [
+                int(pra)
+                for i, pra in enumerate(x["PRA_ID"])
+                if x["SPEC_ID"][i]
+            ],
+        axis=1,
+    )
+    df_member = (
+        df_member.groupby(["MEMBER"])["CODE", "PRA_ID"]
+        .agg(list)
+        .reset_index()
+    )
     return df_member
 
 
@@ -138,7 +105,6 @@ def get_training_set(year, model):
                 mem_date_start=mem_date_start,
                 mem_date_end=mem_date_end,
                 model=model,
-                get_client_id=False,
             )
             sub_codes = pd.DataFrame(sub_codes)
             sub_codes.columns = ["mem_id", "pra_id", "spec_id", "code"]

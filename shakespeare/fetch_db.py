@@ -32,7 +32,7 @@ def get_members(payer, server="CARABWDB03", date_start=None, date_end=None):
 
     Return
     --------
-    List of client memberIDs
+    List of memberIDs
 
     Examples
     --------
@@ -50,19 +50,19 @@ def get_members(payer, server="CARABWDB03", date_start=None, date_end=None):
     ).cursor()
     date_start, date_end, = str(date_start), str(date_end)
     sql = (
-        """SELECT mem_id, mem_ClientMemberID
-                   FROM """
+        """SELECT mem_id
+           FROM """
         + payer
         + """.dbo.tbMember
-            WHERE mem_ClientMemberID IS NOT NULL AND dateInserted BETWEEN '"""
+            WHERE dateInserted BETWEEN '"""
         + date_start
         + """' AND '"""
         + date_end
         + """'
-                   ORDER BY mem_id DESC
-                   """
+        ORDER BY mem_id DESC
+        """
     )
-    sql = re.sub("AND dateInserted BETWEEN 'None' AND 'None'", "", sql)
+    sql = re.sub("WHERE dateInserted BETWEEN 'None' AND 'None'", "", sql)
     cursor.execute(sql)
     return list(set([(i[0], i[1]) for i in cursor]))
 
@@ -116,7 +116,7 @@ def batch_member_codes(
 
     Return
     --------
-    List of tuples (mem_id, *mem_ClientMemberID, encounter_id, Code)
+    List of tuples (mem_id, pra_id, spec_id, Code)
 
     Examples
     --------
@@ -183,15 +183,19 @@ def batch_member_codes(
         sql = re.sub(
             r"INNER JOIN #MemberList m ON tbm\.mem_id = m.mem_id", "", sql
         )
-    sql = re.sub(r"AND dateInserted BETWEEN 'None' AND 'None'", "", sql)
+    sql = re.sub(r"WHERE dateInserted BETWEEN 'None' AND 'None'", "", sql)
     cursor.execute(sql)
     while cursor.nextset():
         pass
     cursor.commit()
 
-    mrr_queue_sql = "INNER JOIN CARA2_Processor.dbo.MrrResultQueue MQ ON "\
-        "e.mrsq_mrrresultrunid = MQ.mrsq_mrrresultrunid AND "\
-        "MQ.mrsq_DateCompleted <= '" + file_date_lmt + "'"
+    mrr_queue_sql = (
+        "INNER JOIN CARA2_Processor.dbo.MrrResultQueue MQ ON "
+        + "e.mrsq_mrrresultrunid = MQ.mrsq_mrrresultrunid AND "
+        + "MQ.mrsq_DateCompleted <= '"
+        + file_date_lmt
+        + "'"
+    )
     sql = (
         """
     BEGIN TRY DROP TABLE #mrr_temp END TRY BEGIN CATCH END CATCH
@@ -202,36 +206,36 @@ def batch_member_codes(
             payer,
         )
         + """.dbo.MRRData') IS NOT NULL
-    BEGIN
-        SELECT e.mem_id AS MemberID,
-            e.pra_id                            AS PraID,
-            pra.spec_id                         AS SpecID,
-            mrr_StartDate                       AS ServiceDate,
-            CASE icdVersionInd
-                WHEN 9 THEN 'ICD9' WHEN 10 THEN 'ICD10' ELSE 'ICD9' END
-                                                AS CodeType,
-            UPPER(e.icd_Code)                   AS Code
-    	INTO #mrr_temp
-        FROM """
-        + re.sub(
-            r"CD_",
-            "CARA2_Results_" + ("HIX_" if "HHS" in model_name else ""),
-            payer,
-        )
-        + """.dbo.MRRData e WITH(NOLOCK)
-            INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-            LEFT JOIN """
-        + payer
-        + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
-                        """
-        + f"""{mrr_queue_sql if file_date_lmt != 'None' else ''}"""
-        + """
-        WHERE e.mrr_StartDate BETWEEN '"""
-        + date_start
-        + """' AND '"""
-        + date_end
-        + """'
-    END"""
+        BEGIN
+            SELECT e.mem_id AS MemberID,
+                e.pra_id                            AS PraID,
+                pra.spec_id                         AS SpecID,
+                mrr_StartDate                       AS ServiceDate,
+                CASE icdVersionInd
+                    WHEN 9 THEN 'ICD9' WHEN 10 THEN 'ICD10' ELSE 'ICD9' END
+                                                    AS CodeType,
+                UPPER(e.icd_Code)                   AS Code
+            INTO #mrr_temp
+            FROM """
+            + re.sub(
+                r"CD_",
+                "CARA2_Results_" + ("HIX_" if "HHS" in model_name else ""),
+                payer,
+            )
+            + """.dbo.MRRData e WITH(NOLOCK)
+                INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
+                LEFT JOIN """
+            + payer
+            + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
+                            """
+            + f"""{mrr_queue_sql if file_date_lmt != 'None' else ''}"""
+            + """
+            WHERE e.mrr_StartDate BETWEEN '"""
+            + date_start
+            + """' AND '"""
+            + date_end
+            + """'
+        END"""
     )
     sql = re.sub(
         r"WHERE [ep]\.[a-zA-Z_]+ BETWEEN 'None' AND 'None'", "", sql

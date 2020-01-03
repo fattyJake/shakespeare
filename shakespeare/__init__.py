@@ -199,7 +199,6 @@ def detect(
             mem_date_start=mem_date_start,
             mem_date_end=mem_date_end,
             model=model,
-            get_client_id=False,
         )
         if not table:
             return []
@@ -233,7 +232,6 @@ def detect(
                 mem_date_start=mem_date_start,
                 mem_date_end=mem_date_end,
                 model=model,
-                get_client_id=False,
             )
             if not table:
                 continue
