@@ -136,7 +136,7 @@ def plot_coefficients(
 
     # plot
     with plt.style.context("ggplot"):
-        spacing = 3
+        # spacing = 3
         barwidth = 0.2
         fig = plt.figure(
             figsize=(
