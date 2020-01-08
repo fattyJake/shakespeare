@@ -93,7 +93,7 @@ def get_training_set(year, model):
     p_year = str(year - 1)
     codes = {}
 
-    for y in range(year - 2, year):
+    for y in range(year - 3, year):
         for m in range(1, 12):
             mem_date_start = datetime(y, m, 1).strftime("%Y-%m-%d")
             mem_date_end = datetime(y, m + 1, 1).strftime("%Y-%m-%d")
@@ -188,17 +188,17 @@ def update_mappings(model):
         )
 
     unique_codes = sorted(
-        list({"ICD" + str(i[0]) + "-" + str(i[1]) for i in mapping_dict})
+        list({f"ICD{str(i[0])}DX-" + str(i[1]) for i in mapping_dict})
     )
     new_mapping_dict = {i: [] for i in unique_codes}
     if "CDPS" in model_name:
         for i in mapping_dict:
-            new_mapping_dict["ICD" + str(i[0]) + "-" + str(i[1])].append(
+            new_mapping_dict[f"ICD{str(i[0])}DX-" + str(i[1])].append(
                 str(i[2])
             )
     else:
         for i in mapping_dict:
-            new_mapping_dict["ICD" + str(i[0]) + "-" + str(i[1])].append(
+            new_mapping_dict[f"ICD{str(i[0])}DX-" + str(i[1])].append(
                 "HCC" + str(i[2])
             )
 

@@ -46,32 +46,3 @@ def build_member_input_vector(member_codes_found, variables):
     #        (output,build_demographic_vector(dob,gender))
     #     )
     return scipy.sparse.csr_matrix(output)
-
-
-# def build_demographic_vector(dob,gender,today=None):
-#    """
-#    @param gender: string describing gender, defaults to female
-#    @param dob: date of birth (YYYY-MM-DD)
-#    @param today (opt): uses given date for age (YYYY-MM-DD), else uses today
-#    """
-#
-#    # initialization of gender (male = 1, female = 0 (defualt))
-#    gender = 1 if gender in ['1', 'M','m','MALE','Male','male'] else 0
-#
-#    # initialization of dob (YYYY-MM-DD)
-#    if today: today = datetime.strptime(today,'%Y-%m-%d')
-#    else:     today = datetime.today()
-#    if isinstance(dob, str): dob = datetime.strptime(dob,'%Y-%m-%d')
-#    age = (today-dob).days/365
-#
-#    # vectorize as numpy array of [gender,0-18,19-44,45-64,65-84,85+,Unknown,
-#      hite (non-Hispanic),Black (non-Hispanic),Other,Asian/Pacific Islander,
-#      Hispanic/Latino,North American Native]
-#    vector = np.array([[gender,
-#                       age>=0  and age<18,
-#                       age>=18 and age<45,
-#                       age>=45 and age<65,
-#                       age>=65 and age<85,
-#                       age>=85,
-#                       ]])
-#    return vector

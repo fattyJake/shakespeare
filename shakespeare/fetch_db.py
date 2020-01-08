@@ -68,15 +68,15 @@ def get_members(payer, server="CARABWDB03", date_start=None, date_end=None):
 
 
 def batch_member_codes(
-    payer="CD_HEALTHFIRST",
-    server="CARABWDB03",
-    memberIDs=None,
-    date_start=None,
-    date_end=None,
-    file_date_lmt=None,
-    mem_date_start=None,
-    mem_date_end=None,
-    model=63,
+    payer: str,
+    server: str,
+    date_start: str,
+    date_end: str,
+    memberIDs: list = None,
+    file_date_lmt: str = None,
+    mem_date_start: str = None,
+    mem_date_end: str = None,
+    model: int = 63,
 ):
     """
     Retrieve a list of members' codes
@@ -89,15 +89,15 @@ def batch_member_codes(
     server : str
         CARA server on which the payer is located ('CARABWDB03')
 
-    memberIDs : list, optional (default: None)
-        list of memberIDs (e.g. [1120565]); if None, get results from all
-        members under payer
-
     date_start : str, optional (default: None)
         string as 'YYYY-MM-DD' to get claims data from
 
     date_end : str, optional (default: None)
         string as 'YYYY-MM-DD' to get claims data to
+
+    memberIDs : list, optional (default: None)
+        list of memberIDs (e.g. [1120565]); if None, get results from all
+        members under payer
 
     file_date_lmt : str, optional (default: None)
         string as 'YYYY-MM-DD' indicating the latest file date limit of patient
@@ -122,11 +122,11 @@ def batch_member_codes(
     --------
     >>> from shakespeare.fetch_db import batch_member_codes
     >>> batch_member_codes("CD_HEALTHFIRST", memberIDs=[1120565])
-    [(1120565, '130008347', 'ICD9-4011'),
+    [(1120565, '130008347', 'ICD9DX-4011'),
      (1120565, '130008347', 'CPT-73562'),
      ...
      (1120565, '130008347', 'CPT-92012'),
-     (1120565, '130008347', 'ICD9-78659')]
+     (1120565, '130008347', 'ICD9DX-78659')]
     """
 
     # initialize
@@ -212,7 +212,7 @@ def batch_member_codes(
                 pra.spec_id                         AS SpecID,
                 mrr_StartDate                       AS ServiceDate,
                 CASE icdVersionInd
-                    WHEN 9 THEN 'ICD9' WHEN 10 THEN 'ICD10' ELSE 'ICD9' END
+                WHEN 9 THEN 'ICD9DX' WHEN 10 THEN 'ICD10DX' ELSE 'ICD9DX' END
                                                     AS CodeType,
                 UPPER(e.icd_Code)                   AS Code
             INTO #mrr_temp
@@ -268,7 +268,7 @@ def batch_member_codes(
         pra.spec_id                                         AS SpecID,
         ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
         CASE icdVersionInd
-            WHEN 9 THEN 'ICD9' WHEN 10 THEN 'ICD10' ELSE 'ICD9' END
+            WHEN 9 THEN 'ICD9DX' WHEN 10 THEN 'ICD10DX' ELSE 'ICD9DX' END
                                                             AS CodeType,
         UPPER(ed.icd_Code)                                  AS Code
     FROM """
@@ -298,9 +298,9 @@ def batch_member_codes(
         -1                                                   AS PraID,
         -1                                                   AS SpecID,
         raps_DOSfrom                                         AS ServiceDate,
-        CASE WHEN raps_ICD10 is NULL THEN 'ICD9' else 'ICD10' END
+        CASE WHEN raps_ICD10 is NULL THEN 'ICD9DX' else 'ICD10DX' END
                                                              AS CodeType,
-        ISNULL(UPPER(raps_ICD10),UPPER(raps_ICD9))           AS Code
+        ISNULL(UPPER(raps_ICD10), UPPER(raps_ICD9))          AS Code
     FROM """
         + payer
         + """.dbo.tbMedicareRapsReturn e WITH(NOLOCK)
@@ -411,7 +411,7 @@ def batch_member_codes(
         pra.spec_id                                         AS SpecID,
         ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
         CASE icdVersionInd
-            WHEN 9 THEN 'ICD9Proc' WHEN 10 THEN 'ICD10Proc' ELSE 'ICD9Proc' END
+            WHEN 9 THEN 'ICD9PX' WHEN 10 THEN 'ICD10PX' ELSE 'ICD9PX' END
                                                             AS CodeType,
         eProc.icd_Code                                      AS Code
     FROM """
@@ -572,7 +572,7 @@ def batch_member_monthly_report(
     )
     if not memberIDs:
         sql = re.sub(
-            "LEFT JOIN #Temp t ON mmr\.mem_id = t\.mem_id", "", sql
+            r"LEFT JOIN #Temp t ON mmr\.mem_id = t\.mem_id", "", sql
         )
     cursor.execute(sql)
     return list(

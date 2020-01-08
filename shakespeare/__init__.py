@@ -10,10 +10,9 @@
 #                                         |_|                                 #
 #                                                                             #
 ###############################################################################
-# A python package designed to detect gaps using the CARA conditions
-# NOTE: this model is NOT designed for prospective advantage
+# A python package designed to detect gaps using client claim data
 #
-# Authors:  William Kinsman, Chenyu (Oliver) Ha, Harshal Samant, Yage Wang
+# Authors:  William Kinsman, Chenyu (Oliver) Ha, Yage Wang
 # Created:  11.02.2017
 # Version:  2.6.0
 ###############################################################################
@@ -27,13 +26,14 @@ mingw_path = os.path.join(
 )
 os.environ["PATH"] = mingw_path + ";" + os.environ["PATH"]
 
+# system libs
 import pickle
 import itertools
 import operator
 import gc
 from datetime import datetime
 
-# data $ machine learning libs
+# data & machine learning libs
 import numpy as np
 import pandas as pd
 import shap
@@ -47,19 +47,20 @@ from . import utils
 
 
 def detect(
-    payer,
-    server,
-    memberID_list=None,
-    date_start=None,
-    date_end=None,
-    file_date_lmt=None,
-    mem_date_start=None,
-    mem_date_end=None,
-    model=63,
-    auto_update=False,
-    threshold=0,
-    get_indicators=False,
-    top_n_indicator=5,
+    payer: str,
+    server: str,
+    mode: str,
+    date_start: str = None,
+    date_end: str = None,
+    memberID_list: list = None,
+    file_date_lmt: str = None,
+    mem_date_start: str = None,
+    mem_date_end: str = None,
+    model: int = 63,
+    auto_update: bool = False,
+    threshold: float = 0,
+    get_indicators: bool = False,
+    top_n_indicator: int = 5,
 ):
     """
     Detects the HCCs a patient may have, and supporting evidence
@@ -71,17 +72,20 @@ def detect(
         
     server : str
         CARA server on which the payer is located ('CARABWDB03')
-        
-    memberID_list : list, optional (default: None)
-        list of memberIDs (e.g. [1120565]); if None, get results from all
-        members under payer
+    
+    mode : str
+        either 'retrospective' or 'prospective'
         
     date_start : str, optional (default: None)
         string as 'YYYY-MM-DD' to get claims data from
         
     date_end : str, optional (default: None)
         string as 'YYYY-MM-DD' to get claims data to
-        
+
+    memberID_list : list, optional (default: None)
+        list of memberIDs (e.g. [1120565]); if None, get results from all
+        members under payer
+
     file_date_lmt : str, optional (default: None)
         string as 'YYYY-MM-DD' indicating the latest file date limit of patient
         codes, generally at the half of one year
@@ -167,6 +171,13 @@ def detect(
 
     if date_end:
         year = int(date_end[:4])
+        if mode == "prospective":
+            assert datetime.today() > datetime.strptime(
+                date_end, "%Y-%m-%d"
+            ), print(
+                f"{date_end} is later than today, please provide "
+                + '"date_end" that is earlier than today.'
+            )
     else:
         year = str(datetime.now().year)
 
@@ -175,7 +186,7 @@ def detect(
             os.path.dirname(os.path.realpath(__file__)),
             r"pickle_files",
             r"ensembles",
-            "ensemble_{}".format(model),
+            f"ensemble_{model}",
         )
     ):
         if auto_update:
@@ -188,7 +199,7 @@ def detect(
             )
 
     print("Getting data...")
-    if len(memberID_list) <= 40000:
+    if len(memberID_list) <= 50000:
         table = fetch_db.batch_member_codes(
             payer=payer,
             server=server,
@@ -200,10 +211,26 @@ def detect(
             mem_date_end=mem_date_end,
             model=model,
         )
+        if mode == "prospective":
+            next_table = fetch_db.batch_member_codes(
+                payer=payer,
+                server=server,
+                memberIDs=memberID_list,
+                date_start=date_end,
+                date_end=datetime.today().date().strftime("%Y-%m-%d"),
+                file_date_lmt=None,
+                mem_date_start=mem_date_start,
+                mem_date_end=mem_date_end,
+                model=model,
+            )
+        else:
+            next_table = None
+
         if not table:
             return []
         return detect_members(
             table,
+            next_table,
             model,
             auto_update,
             threshold,
@@ -233,11 +260,27 @@ def detect(
                 mem_date_end=mem_date_end,
                 model=model,
             )
+            if mode == "prospective":
+                next_table = fetch_db.batch_member_codes(
+                    payer=payer,
+                    server=server,
+                    memberIDs=memberID_list,
+                    date_start=date_end,
+                    date_end=datetime.today().date().strftime("%Y-%m-%d"),
+                    file_date_lmt=None,
+                    mem_date_start=mem_date_start,
+                    mem_date_end=mem_date_end,
+                    model=model,
+                )
+            else:
+                next_table = None
+
             if not table:
                 continue
             results.extend(
                 detect_members(
                     table,
+                    next_table,
                     model,
                     auto_update,
                     threshold,
@@ -245,19 +288,20 @@ def detect(
                     top_n_indicator,
                 )
             )
-            del table
+            del table, next_table
             gc.collect()
 
         return results
 
 
 def detect_members(
-    table,
-    model=63,
-    auto_update=False,
-    threshold=0,
-    get_indicators=False,
-    top_n_indicator=5,
+    table: list,
+    next_table: list = list(),
+    model: int = 63,
+    auto_update: bool = False,
+    threshold: float = 0,
+    get_indicators: bool = False,
+    top_n_indicator: int = 5,
 ):
     """
     Detects the HCCs a patient may have, and supporting evidence
@@ -267,7 +311,11 @@ def detect_members(
     table : list of tuples
         list of tuples of format [(mem_id, enc_id, code)]; e.g. [(1120565,
         '130008347', 'ICD9-4011'), (1120565, '130008347', 'CPT-73562')]
-        
+    
+    next_table : list of tuples, optional (default: [])
+        the codes of the current service year for prospective purpose, same
+        format as tables
+
     model : int, optional (default: 63)
         an integer of model version ID in
         MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only
@@ -377,19 +425,34 @@ def detect_members(
     del table
     gc.collect()
 
+    if next_table:
+        df_next_member = utils.create_df(next_table)
+
     # check for direct mappings
-    member_known = {}
-    for idx, row in df_member.iterrows():
-        knowns = []
-        for i in row["CODE"]:
-            if i in mappings and i not in knowns:
-                knowns.extend(mappings[i])
-        member_known[row["MEMBER"]] = list(set(knowns))
+    member_known = df_member.set_index("MEMBER")["CODE"].to_dict()
+    member_known = {
+        mem_id: set(
+            itertools.chain(*[mappings.get(code, []) for code in codes])
+        )
+        for mem_id, codes in member_known.items()
+    }
+
+    if next_table:
+        member_next_known = (
+            df_next_member.set_index("MEMBER")["CODE"].to_dict()
+        )
+        member_next_known = {
+            mem_id: set(
+                itertools.chain(*[mappings.get(code, []) for code in codes])
+            )
+            for mem_id, codes in member_next_known.items()
+        }
 
     print("Total members with codes: {}".format(str(df_member.shape[0])))
 
     # Vectorizing
     print("Vectoring...")
+
     df_vector = df_member[["MEMBER", "CODE"]].copy()
     df_vector["temp"] = np.nan
     df_vector["temp"] = df_vector["temp"].astype(object)
@@ -447,7 +510,7 @@ def detect_members(
 
         df_list = []
         for HCC in ensemble.keys():
-            if ensemble[HCC]['classifier'] is None:
+            if ensemble[HCC]["classifier"] is None:
                 continue
 
             explainer = shap.TreeExplainer(
