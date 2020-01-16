@@ -46,12 +46,11 @@ from . import visualizations
 from . import utils
 
 
-def detect(
+def detect_internal(
     payer: str,
     server: str,
-    mode: str,
-    date_start: str = None,
-    date_end: str = None,
+    date_start: str,
+    date_end: str,
     memberID_list: list = None,
     file_date_lmt: str = None,
     mem_date_start: str = None,
@@ -63,7 +62,7 @@ def detect(
     top_n_indicator: int = 5,
 ):
     """
-    Detects the HCCs a patient may have, and supporting evidence
+    Wrapper of core_ml for Inovalon internal use.
 
     Parameters
     --------
@@ -72,14 +71,11 @@ def detect(
         
     server : str
         CARA server on which the payer is located ('CARABWDB03')
-    
-    mode : str
-        either 'retrospective' or 'prospective'
         
-    date_start : str, optional (default: None)
+    date_start : str
         string as 'YYYY-MM-DD' to get claims data from
         
-    date_end : str, optional (default: None)
+    date_end : str
         string as 'YYYY-MM-DD' to get claims data to
 
     memberID_list : list, optional (default: None)
@@ -125,8 +121,8 @@ def detect(
 
     Examples
     --------
-    >>> from shakespeare import detect
-    >>> detect(
+    >>> from shakespeare import detect_internal
+    >>> detect_internal(
             payer="CD_GATEWAY",
             server="CARABWDB06",
             date_start='2017-01-01',
@@ -171,13 +167,6 @@ def detect(
 
     if date_end:
         year = int(date_end[:4])
-        if mode == "prospective":
-            assert datetime.today() > datetime.strptime(
-                date_end, "%Y-%m-%d"
-            ), print(
-                f"{date_end} is later than today, please provide "
-                + '"date_end" that is earlier than today.'
-            )
     else:
         year = str(datetime.now().year)
 
@@ -198,12 +187,13 @@ def detect(
                 f"update({model}, {year})` to train ML for Model {model}."
             )
 
+    # TODO: change core_ml call after determine core_ml parameter list
     print("Getting data...")
     if len(memberID_list) <= 50000:
         table = fetch_db.batch_member_codes(
             payer=payer,
             server=server,
-            memberIDs=memberID_list,
+            memberID_list=memberID_list,
             date_start=date_start,
             date_end=date_end,
             file_date_lmt=file_date_lmt,
@@ -211,26 +201,11 @@ def detect(
             mem_date_end=mem_date_end,
             model=model,
         )
-        if mode == "prospective":
-            next_table = fetch_db.batch_member_codes(
-                payer=payer,
-                server=server,
-                memberIDs=memberID_list,
-                date_start=date_end,
-                date_end=datetime.today().date().strftime("%Y-%m-%d"),
-                file_date_lmt=None,
-                mem_date_start=mem_date_start,
-                mem_date_end=mem_date_end,
-                model=model,
-            )
-        else:
-            next_table = None
 
         if not table:
             return []
-        return detect_members(
+        return core_ml(
             table,
-            next_table,
             model,
             auto_update,
             threshold,
@@ -252,7 +227,7 @@ def detect(
             table = fetch_db.batch_member_codes(
                 payer=payer,
                 server=server,
-                memberIDs=sub_mem,
+                memberID_list=sub_mem,
                 date_start=date_start,
                 date_end=date_end,
                 file_date_lmt=file_date_lmt,
@@ -260,27 +235,12 @@ def detect(
                 mem_date_end=mem_date_end,
                 model=model,
             )
-            if mode == "prospective":
-                next_table = fetch_db.batch_member_codes(
-                    payer=payer,
-                    server=server,
-                    memberIDs=memberID_list,
-                    date_start=date_end,
-                    date_end=datetime.today().date().strftime("%Y-%m-%d"),
-                    file_date_lmt=None,
-                    mem_date_start=mem_date_start,
-                    mem_date_end=mem_date_end,
-                    model=model,
-                )
-            else:
-                next_table = None
 
             if not table:
                 continue
             results.extend(
-                detect_members(
+                core_ml(
                     table,
-                    next_table,
                     model,
                     auto_update,
                     threshold,
@@ -288,13 +248,19 @@ def detect(
                     top_n_indicator,
                 )
             )
-            del table, next_table
+            del table
             gc.collect()
 
         return results
 
 
-def detect_members(
+# TODO: adding API capability
+def detect_api(json_body: dict):
+    pass
+
+
+# TODO: determine parameter list
+def core_ml(
     table: list,
     next_table: list = list(),
     model: int = 63,

@@ -29,6 +29,7 @@ from . import fetch_db
 from . import vectorizers
 
 
+# TODO: change functionality of spliting retro and pros
 def create_df(table):
     df_member = pd.DataFrame(table)
     SPECIALISTS = {

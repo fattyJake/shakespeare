@@ -1,0 +1,41 @@
+{
+    "today_date": "2020-04-15",
+    "target_year": 2020,
+    "model_version_ID": 79,
+    "threshold": 0.0,
+    "get_indicators": true,
+    "top_n_indicator": 5,
+    "payload": [
+        {
+            "mem_id": 1,
+            "codes": [
+                {
+                    "service_date": "2019-05-23",
+                    "code_type": "ICD10DX",
+                    "code": "I10",
+                    "pra_id": 234,
+                    "spec_id": 87
+                },
+                {
+                    "service_date": "2019-05-23",
+                    "code_type": "ICD10DX",
+                    "code": "E785",
+                    "pra_id": null,
+                    "spec_id": null
+                }
+            ]
+        },
+        {
+            "mem_id": 2,
+            "codes": [
+                {
+                    "service_date": "2019-05-23",
+                    "code_type": "ICD10DX",
+                    "code": "J449",
+                    "pra_id": 123,
+                    "spec_id": 87
+                }
+            ]
+        }
+    ]
+}

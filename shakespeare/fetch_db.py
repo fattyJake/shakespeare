@@ -8,6 +8,7 @@
 
 import re
 import pyodbc
+import pandas as pd
 from datetime import datetime
 from .utils import get_model_name
 
@@ -72,11 +73,12 @@ def batch_member_codes(
     server: str,
     date_start: str,
     date_end: str,
-    memberIDs: list = None,
+    memberID_list: list = None,
     file_date_lmt: str = None,
     mem_date_start: str = None,
     mem_date_end: str = None,
     model: int = 63,
+    just_claims: bool = False,
 ):
     """
     Retrieve a list of members' codes
@@ -95,7 +97,7 @@ def batch_member_codes(
     date_end : str, optional (default: None)
         string as 'YYYY-MM-DD' to get claims data to
 
-    memberIDs : list, optional (default: None)
+    memberID_list : list, optional (default: None)
         list of memberIDs (e.g. [1120565]); if None, get results from all
         members under payer
 
@@ -104,15 +106,18 @@ def batch_member_codes(
         codes, generally at the half of one year
 
     mem_date_start : str, optional (default: None)
-        as 'YYYY-MM-DD', starting date to filter memberIDs by dateInserted
+        as 'YYYY-MM-DD', starting date to filter memberID_list by dateInserted
 
     mem_date_end : str, optional (default: None)
-        as 'YYYY-MM-DD', ending date to filter memberIDs by dateInserted
+        as 'YYYY-MM-DD', ending date to filter memberID_list by dateInserted
 
     model : int, optional (default: 63)
         an integer of model version ID in
         MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only
         support 'CDPS', 'CMS' and 'HHS'
+    
+    just_claims : bool, optional (default: False)
+        if True, results will eliminate MRR and RAPS returns
 
     Return
     --------
@@ -121,7 +126,7 @@ def batch_member_codes(
     Examples
     --------
     >>> from shakespeare.fetch_db import batch_member_codes
-    >>> batch_member_codes("CD_HEALTHFIRST", memberIDs=[1120565])
+    >>> batch_member_codes("CD_HEALTHFIRST", memberID_list=[1120565])
     [(1120565, '130008347', 'ICD9DX-4011'),
      (1120565, '130008347', 'CPT-73562'),
      ...
@@ -132,11 +137,11 @@ def batch_member_codes(
     # initialize
     if date_start == date_end:
         return []
-    if memberIDs and not isinstance(memberIDs, list):
-        memberIDs = [memberIDs]
-    cursor = pyodbc.connect(
+    if memberID_list and not isinstance(memberID_list, list):
+        memberID_list = [memberID_list]
+    db = pyodbc.connect(
         r"DRIVER=SQL Server;" r"SERVER=" + server + ";", autocommit=True
-    ).cursor()
+    )#.cursor()
 
     date_start, date_end, file_date_lmt, mem_date_start, mem_date_end = (
         str(date_start),
@@ -147,19 +152,19 @@ def batch_member_codes(
     )
     model_name = get_model_name(model)
 
-    if memberIDs:
-        cursor.execute("CREATE TABLE #MemberList (mem_id INT)")
-        cursor.execute(
+    if memberID_list:
+        db.execute("CREATE TABLE #MemberList (mem_id INT)")
+        db.execute(
             "\n".join(
                 [
                     f"INSERT INTO #MemberList VALUES ({str(member)})"
-                    for member in memberIDs
+                    for member in memberID_list
                 ]
             )
         )
-        while cursor.nextset():
+        while db.cursor().nextset():
             pass
-        cursor.commit()
+        db.cursor().commit()
 
     sql = (
         """
@@ -179,98 +184,100 @@ def batch_member_codes(
         + """'
     ORDER BY mem_id DESC"""
     )
-    if not memberIDs:
+    if not memberID_list:
         sql = re.sub(
             r"INNER JOIN #MemberList m ON tbm\.mem_id = m.mem_id", "", sql
         )
     sql = re.sub(r"WHERE dateInserted BETWEEN 'None' AND 'None'", "", sql)
-    cursor.execute(sql)
-    while cursor.nextset():
+    db.execute(sql)
+    while db.cursor().nextset():
         pass
-    cursor.commit()
+    db.cursor().commit()
 
-    mrr_queue_sql = (
-        "INNER JOIN CARA2_Processor.dbo.MrrResultQueue MQ ON "
-        + "e.mrsq_mrrresultrunid = MQ.mrsq_mrrresultrunid AND "
-        + "MQ.mrsq_DateCompleted <= '"
-        + file_date_lmt
-        + "'"
-    )
-    sql = (
-        """
-    BEGIN TRY DROP TABLE #mrr_temp END TRY BEGIN CATCH END CATCH
-    IF OBJECT_ID('"""
-        + re.sub(
-            r"CD_",
-            "CARA2_Results_" + ("HIX_" if "HHS" in model_name else ""),
-            payer,
+    if not just_claims:
+        mrr_queue_sql = (
+            "INNER JOIN CARA2_Processor.dbo.MrrResultQueue MQ ON "
+            + "e.mrsq_mrrresultrunid = MQ.mrsq_mrrresultrunid AND "
+            + "MQ.mrsq_DateCompleted <= '"
+            + file_date_lmt
+            + "'"
         )
-        + """.dbo.MRRData') IS NOT NULL
-        BEGIN
-            SELECT e.mem_id AS MemberID,
-                e.pra_id                            AS PraID,
-                pra.spec_id                         AS SpecID,
-                mrr_StartDate                       AS ServiceDate,
-                CASE icdVersionInd
-                WHEN 9 THEN 'ICD9DX' WHEN 10 THEN 'ICD10DX' ELSE 'ICD9DX' END
-                                                    AS CodeType,
-                UPPER(e.icd_Code)                   AS Code
-            INTO #mrr_temp
-            FROM """
+        sql = (
+            """
+        BEGIN TRY DROP TABLE #mrr_temp END TRY BEGIN CATCH END CATCH
+        IF OBJECT_ID('"""
             + re.sub(
                 r"CD_",
                 "CARA2_Results_" + ("HIX_" if "HHS" in model_name else ""),
                 payer,
             )
-            + """.dbo.MRRData e WITH(NOLOCK)
-                INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-                LEFT JOIN """
-            + payer
-            + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
-                            """
-            + f"""{mrr_queue_sql if file_date_lmt != 'None' else ''}"""
-            + """
-            WHERE e.mrr_StartDate BETWEEN '"""
-            + date_start
-            + """' AND '"""
-            + date_end
-            + """'
+            + """.dbo.MRRData') IS NOT NULL
+            BEGIN
+                SELECT e.mem_id                         AS mem_id,
+                    e.pra_id                            AS pra_id,
+                    pra.spec_id                         AS spec_id,
+                    mrr_StartDate                       AS service_date,
+                    CASE icdVersionInd
+                        WHEN 9 THEN 'ICD9DX' WHEN 10 THEN 'ICD10DX'
+                        ELSE 'ICD9DX' END
+                                                        AS code_type,
+                    UPPER(e.icd_Code)                   AS code
+                INTO #mrr_temp
+                FROM """
+                + re.sub(
+                    r"CD_",
+                    "CARA2_Results_" + ("HIX_" if "HHS" in model_name else ""),
+                    payer,
+                )
+                + """.dbo.MRRData e WITH(NOLOCK)
+                    INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
+                    LEFT JOIN """
+                + payer
+                + """.dbo.tbPractitioner pra ON pra.pra_id = e.pra_id
+                                """
+                + f"""{mrr_queue_sql if file_date_lmt != 'None' else ''}"""
+                + """
+                WHERE e.mrr_StartDate BETWEEN '"""
+                + date_start
+                + """' AND '"""
+                + date_end
+                + """'
+            END"""
+        )
+        sql = re.sub(
+            r"WHERE [ep]\.[a-zA-Z_]+ BETWEEN 'None' AND 'None'", "", sql
+        )
+
+        db.execute(sql)
+        while db.cursor().nextset():
+            pass
+        db.cursor().commit()
+
+        sql = """
+        IF OBJECT_ID('tempdb..#mrr_temp') IS NULL
+        BEGIN
+            CREATE TABLE #mrr_temp (mem_id INT,
+                pra_id INT,
+                spec_id INT,
+                service_date DATE,
+                code_type VARCHAR(50),
+                code VARCHAR(50))
         END"""
-    )
-    sql = re.sub(
-        r"WHERE [ep]\.[a-zA-Z_]+ BETWEEN 'None' AND 'None'", "", sql
-    )
-
-    cursor.execute(sql)
-    while cursor.nextset():
-        pass
-    cursor.commit()
-
-    sql = """
-    IF OBJECT_ID('tempdb..#mrr_temp') IS NULL
-    BEGIN
-        CREATE TABLE #mrr_temp (MemberID INT,
-            PraID INT,
-            SpecID INT,
-            ServiceDate DATE,
-            CodeType VARCHAR(50),
-            Code VARCHAR(50))
-    END"""
-    cursor.execute(sql)
-    while cursor.nextset():
-        pass
-    cursor.commit()
+        db.execute(sql)
+        while db.cursor().nextset():
+            pass
+        db.cursor().commit()
 
     sql = (
         """
-    SELECT e.mem_id                                         AS MemberID,
-        e.pra_id                                            AS PraID,
-        pra.spec_id                                         AS SpecID,
-        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
+    SELECT e.mem_id                                         AS mem_id,
+        e.pra_id                                            AS pra_id,
+        pra.spec_id                                         AS spec_id,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS service_date,
         CASE icdVersionInd
             WHEN 9 THEN 'ICD9DX' WHEN 10 THEN 'ICD10DX' ELSE 'ICD9DX' END
-                                                            AS CodeType,
-        UPPER(ed.icd_Code)                                  AS Code
+                                                            AS code_type,
+        UPPER(ed.icd_Code)                                  AS code
     FROM """
         + payer
         + """.dbo.tbEncounter e WITH(NOLOCK)
@@ -293,41 +300,12 @@ def batch_member_codes(
         + date_end
         + """'
     UNION
-    --Bring in diagnoses codes from RAPS Returns
-    SELECT e.mem_id                                          AS MemberID,
-        -1                                                   AS PraID,
-        -1                                                   AS SpecID,
-        raps_DOSfrom                                         AS ServiceDate,
-        CASE WHEN raps_ICD10 is NULL THEN 'ICD9DX' else 'ICD10DX' END
-                                                             AS CodeType,
-        ISNULL(UPPER(raps_ICD10), UPPER(raps_ICD9))          AS Code
-    FROM """
-        + payer
-        + """.dbo.tbMedicareRapsReturn e WITH(NOLOCK)
-            INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
-            INNER JOIN """
-        + payer
-        + """.dbo.tbFile f WITH(NOLOCK)
-            ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
-        + file_date_lmt
-        + """'
-    WHERE e.raps_DOSfrom BETWEEN '"""
-        + date_start
-        + """' AND '"""
-        + date_end
-        + """'
-    		AND ISNULL(e.raps_DiagError1, '') IN ('', '502')
-    		AND ISNULL(e.raps_DiagError2, '') = ''
-    		AND (ISNULL(e.raps_HICError, '') IN ('', '500')
-    		AND ISNULL(e.raps_MBIError, '') IN ('', '503'))
-    		AND ISNULL(e.risk_assessment_code_error, '') = ''
-    UNION
-    SELECT e.mem_id                                         AS MemberID,
-        e.pra_id                                            AS PraID,
-        pra.spec_id                                         AS SpecID,
-        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
-        'CPT'                                               AS CodeType,
-        eCPT.cpt_Code                                       AS Code
+    SELECT e.mem_id                                         AS mem_id,
+        e.pra_id                                            AS pra_id,
+        pra.spec_id                                         AS spec_id,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS service_date,
+        'CPT'                                               AS code_type,
+        eCPT.cpt_Code                                       AS code
     FROM """
         + payer
         + """.dbo.tbEncounter e WITH(NOLOCK)
@@ -350,12 +328,12 @@ def batch_member_codes(
         + date_end
         + """'
     UNION
-    SELECT e.mem_id                                         AS MemberID,
-        e.pra_id                                            AS PraID,
-        pra.spec_id                                         AS SpecID,
-        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
-        'DRG'                                               AS CodeType,
-        eDRG.DRG_Code                                       AS Code
+    SELECT e.mem_id                                         AS mem_id,
+        e.pra_id                                            AS pra_id,
+        pra.spec_id                                         AS spec_id,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS service_date,
+        'DRG'                                               AS code_type,
+        eDRG.DRG_Code                                       AS code
     FROM """
         + payer
         + """.dbo.tbEncounter e WITH(NOLOCK)
@@ -378,12 +356,12 @@ def batch_member_codes(
         + date_end
         + """'
     UNION
-    SELECT e.mem_id                                         AS MemberID,
-        e.pra_id                                            AS PraID,
-        pra.spec_id                                         AS SpecID,
-        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
-        'HCPCS'                                             AS CodeType,
-        eHCPCS.HCPCS_Code                                   AS Code
+    SELECT e.mem_id                                         AS mem_id,
+        e.pra_id                                            AS pra_id,
+        pra.spec_id                                         AS spec_id,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS service_date,
+        'HCPCS'                                             AS code_type,
+        eHCPCS.HCPCS_Code                                   AS code
     FROM """
         + payer
         + """.dbo.tbEncounter e WITH(NOLOCK)
@@ -406,14 +384,14 @@ def batch_member_codes(
         + date_end
         + """'
     UNION
-    SELECT e.mem_id                                         AS MemberID,
-        e.pra_id                                            AS PraID,
-        pra.spec_id                                         AS SpecID,
-        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS ServiceDate,
+    SELECT e.mem_id                                         AS mem_id,
+        e.pra_id                                            AS pra_id,
+        pra.spec_id                                         AS spec_id,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)      AS service_date,
         CASE icdVersionInd
             WHEN 9 THEN 'ICD9PX' WHEN 10 THEN 'ICD10PX' ELSE 'ICD9PX' END
-                                                            AS CodeType,
-        eProc.icd_Code                                      AS Code
+                                                            AS code_type,
+        eProc.icd_Code                                      AS code
     FROM """
         + payer
         + """.dbo.tbEncounter e WITH(NOLOCK)
@@ -436,12 +414,12 @@ def batch_member_codes(
         + date_end
         + """'
     UNION
-    SELECT p.mem_id                                         AS MemberID,
-        p.pra_id                                            AS PraID,
-        pra.spec_id                                         AS SpecID,
-        pha_ServiceDate                                     AS ServiceDate,
-        'NDC9'                                              AS CodeType,
-        NDC.ndcl_NDC9Code                                   AS Code
+    SELECT p.mem_id                                         AS mem_id,
+        p.pra_id                                            AS pra_id,
+        pra.spec_id                                         AS spec_id,
+        pha_ServiceDate                                     AS service_date,
+        'NDC9'                                              AS code_type,
+        NDC.ndcl_NDC9Code                                   AS code
     FROM """
         + payer
         + """.dbo.tbPharmacy p WITH(NOLOCK)
@@ -463,10 +441,46 @@ def batch_member_codes(
         + """' AND '"""
         + date_end
         + """'
-    UNION
-    SELECT * FROM #mrr_temp
     """
     )
+
+    if not just_claims:
+        sql += (
+        """
+        --Bring in diagnoses codes from MRR activities
+        UNION
+        SELECT * FROM #mrr_temp
+        --Bring in diagnoses codes from RAPS Returns
+        UNION
+        SELECT e.mem_id                                        AS mem_id,
+            -1                                                 AS pra_id,
+            -1                                                 AS spec_id,
+            raps_DOSfrom                                       AS service_date,
+            CASE WHEN raps_ICD10 is NULL THEN 'ICD9DX' else 'ICD10DX' END
+                                                               AS code_type,
+            ISNULL(UPPER(raps_ICD10), UPPER(raps_ICD9))        AS code
+        FROM """
+            + payer
+            + """.dbo.tbMedicareRapsReturn e WITH(NOLOCK)
+                INNER JOIN #Temp tp ON tp.mem_id = e.mem_id
+                INNER JOIN """
+            + payer
+            + """.dbo.tbFile f WITH(NOLOCK)
+                ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
+            + file_date_lmt
+            + """'
+        WHERE e.raps_DOSfrom BETWEEN '"""
+            + date_start
+            + """' AND '"""
+            + date_end
+            + """'
+                AND ISNULL(e.raps_DiagError1, '') IN ('', '502')
+                AND ISNULL(e.raps_DiagError2, '') = ''
+                AND (ISNULL(e.raps_HICError, '') IN ('', '500')
+                AND ISNULL(e.raps_MBIError, '') IN ('', '503'))
+                AND ISNULL(e.risk_assessment_code_error, '') = ''
+        """
+        )
     sql = re.sub(
         r"WHERE [ep]\.[a-zA-Z_]+ BETWEEN 'None' AND 'None'", "", sql
     )
@@ -485,19 +499,16 @@ def batch_member_codes(
         sql,
     )
 
-    table = cursor.execute(sql).fetchall()
-    cursor.close()
+    table = pd.read_sql(sql, db).drop_duplicates()
+    db.close()
 
-    table = list(
-        set([(i[0], i[1], i[2], i[4] + "-" + i[5]) for i in table])
-    )
     return table
 
 
 def batch_member_monthly_report(
     payer="CD_HEALTHFIRST",
     server="CARABWDB03",
-    memberIDs=None,
+    memberID_list=None,
     year_month=None
 ):
     """
@@ -511,7 +522,7 @@ def batch_member_monthly_report(
     server : str
         CARA server on which the payer is located ('CARABWDB03')
 
-    memberIDs : list
+    memberID_list : list
         List of member IDs to fetch
 
     year_month : str, optional (default: None)
@@ -541,13 +552,13 @@ def batch_member_monthly_report(
     else:
         year_month = str(datetime.today().year) + '-06'
 
-    if memberIDs:
+    if memberID_list:
         cursor.execute("CREATE TABLE #Temp (mem_id INT)")
         cursor.execute(
             "\n".join(
                 [
                     "INSERT INTO #Temp VALUES ({})".format(str(member))
-                    for member in memberIDs
+                    for member in memberID_list
                 ]
             )
         )
@@ -570,7 +581,7 @@ def batch_member_monthly_report(
         WHERE mmr_AdjustReasonCode = 00 AND mmr_PmtMonth = '"""
         + year_month.replace('-', '') + """'"""
     )
-    if not memberIDs:
+    if not memberID_list:
         sql = re.sub(
             r"LEFT JOIN #Temp t ON mmr\.mem_id = t\.mem_id", "", sql
         )
