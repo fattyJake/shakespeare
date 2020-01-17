@@ -20,13 +20,6 @@
 
 # system libs
 import os
-
-mingw_path = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), r"mingw64", r"bin"
-)
-os.environ["PATH"] = mingw_path + ";" + os.environ["PATH"]
-
-# system libs
 import pickle
 import itertools
 import operator
@@ -41,7 +34,7 @@ from scipy.sparse import csr_matrix, vstack
 
 # package libs
 from . import fetch_db
-from . import vectorizers
+from . import training
 from . import visualizations
 from . import utils
 
@@ -187,7 +180,6 @@ def detect_internal(
                 f"update({model}, {year})` to train ML for Model {model}."
             )
 
-    # TODO: change core_ml call after determine core_ml parameter list
     print("Getting data...")
     if len(memberID_list) <= 50000:
         table = fetch_db.batch_member_codes(
@@ -202,10 +194,11 @@ def detect_internal(
             model=model,
         )
 
-        if not table:
+        if table.shape[0] == 0:
             return []
         return core_ml(
             table,
+            year,
             model,
             auto_update,
             threshold,
@@ -217,6 +210,7 @@ def detect_internal(
             memberID_list[i : i + 40000]
             for i in range(0, len(memberID_list), 40000)
         ]
+        # TODO: change results structure once output fixed
         results = []
         print(f"Total batches: {len(memberID_list)}")
         for batch, sub_mem in enumerate(memberID_list):
@@ -236,11 +230,12 @@ def detect_internal(
                 model=model,
             )
 
-            if not table:
+            if table.shape[0] == 0:
                 continue
             results.extend(
                 core_ml(
                     table,
+                    year,
                     model,
                     auto_update,
                     threshold,
@@ -254,15 +249,76 @@ def detect_internal(
         return results
 
 
-# TODO: adding API capability
 def detect_api(json_body: dict):
-    pass
+    """
+    Wrapper of core_ml for external API use.
+
+    Parameters
+    --------
+    json_body : dict
+        the API body validated by Flask application
+    
+    Return
+    --------
+    member's condition:
+        [(memberID, HCC, prob, norm_prob, tp_flag)]
+        OR
+        [(memberID, HCC, prob, norm_prob, tp_flag, top_n_codes,
+            top_n_encounter_id, top_n_coefficient)]
+
+    Examples
+    --------
+    >>> from shakespeare import detect_api
+    >>> detect_api(payload)
+
+        [(33330, 'HCC19', 0.9041, 0.9800, 0,
+          ['HCPCS-A5500', 'CPT-82043', 'ICD10-I10', 'CPT-83036', 'ICD10-E785'],
+          [167816,174530,219484],
+          [1.4374, 0.7924, 0.4818, 0.38, 0.2694]),
+         (33333, 'HCC19', 0.8445, 0.9668,, 0,
+          ['NDC9-000882219', 'ICD10-I10', 'CPT-82043', 'CPT-83036', 'ICD10-E039'],
+          [11199,164276,152785],
+          [1.3392, 0.6136, 0.5779, 0.4449, 0.3895]),
+         ...
+         (111382, 'HCC114', 0.6686, 0.9226, 1,
+          ['ICD10-J189', 'ICD10Proc-5A1955Z', 'ICD10-R918', 'ICD10-Z4682', 'ICD10-Z66'],
+          [123838, 164643, 176622, 76237, 83652],
+          [1.987, 1.0033, 0.6202, 0.5484, 0.4784]),
+         (312068, 'HCC114', 0.6505, 0.9176, 1,
+          ['ICD10-J189', 'ICD10Proc-5A1955Z', 'ICD10-Z4682', 'CPT-99233', 'ICD10-R918'],
+          [114646, 118574, 118237, 24822, 149849, 14239],
+          [1.8562, 1.5598, 0.8454, 0.6191, 0.6101])]
+    """
+
+    table = []
+    for member_codes in json_body["payload"]:
+        sub_table = pd.DataFrame(member_codes["codes"])
+        sub_table["mem_id"] = member_codes["mem_id"]
+        table.append(sub_table)
+
+    table = pd.concat(table, axis=0)
+    table["year"] = table["service_date"].str.slice(0, 4)
+    table["year"] = table["year"].astype(int)
+    table["code"] = table.apply(
+        lambda row: f"{row['code_type']}-{row['code']}", axis=1
+    )
+    table = table[["mem_id", "pra_id", "spec_id", "year", "code"]]
+
+    return core_ml(
+        table,
+        target_year=json_body.get("target_year", datetime.today().year),
+        model=json_body["model_version_ID"],
+        auto_update=False,  # TODO: allow auto_update in future?
+        threshold=json_body.get("threshold", 0.0),
+        get_indicators=json_body.get("get_indicators", True),
+        top_n_indicator=json_body.get("top_n_indicator", 5),
+    )
 
 
 # TODO: determine parameter list
 def core_ml(
-    table: list,
-    next_table: list = list(),
+    table: pd.DataFrame,
+    target_year: int,
     model: int = 63,
     auto_update: bool = False,
     threshold: float = 0,
@@ -274,13 +330,11 @@ def core_ml(
 
     Parameters
     --------
-    table : list of tuples
-        list of tuples of format [(mem_id, enc_id, code)]; e.g. [(1120565,
-        '130008347', 'ICD9-4011'), (1120565, '130008347', 'CPT-73562')]
+    table : pandas.DataFrame
+        a table with coulumn ['mem_id', 'pra_id', 'spec_id', 'year', 'code']
     
-    next_table : list of tuples, optional (default: [])
-        the codes of the current service year for prospective purpose, same
-        format as tables
+    target_year : int
+        target service year
 
     model : int, optional (default: 63)
         an integer of model version ID in
@@ -311,9 +365,10 @@ def core_ml(
 
     Examples
     --------
-    >>> from shakespeare import detect_members
-    >>> detect_members(
+    >>> from shakespeare import core_ml
+    >>> core_ml(
             table,
+            2019,
             threshold=0.9,
             top_n_indicator=5,
             get_indicators=True
@@ -387,92 +442,89 @@ def core_ml(
         )
     )
 
-    df_member = utils.create_df(table)
+    MEMBER_LIST = list(table.mem_id.unique())
+    print(f"Total members with codes: {len(MEMBER_LIST)}")
+    dict_prior, dict_current = utils.preprocess_table(table, target_year)
     del table
     gc.collect()
 
-    if next_table:
-        df_next_member = utils.create_df(next_table)
-
-    # check for direct mappings
-    member_known = df_member.set_index("MEMBER")["CODE"].to_dict()
-    member_known = {
+    # check for known conditions
+    # NOTE: member_known might not contain all members
+    member_known_prior = {
         mem_id: set(
-            itertools.chain(*[mappings.get(code, []) for code in codes])
-        )
-        for mem_id, codes in member_known.items()
-    }
-
-    if next_table:
-        member_next_known = (
-            df_next_member.set_index("MEMBER")["CODE"].to_dict()
-        )
-        member_next_known = {
-            mem_id: set(
-                itertools.chain(*[mappings.get(code, []) for code in codes])
+            itertools.chain(
+                *[mappings.get(code, []) for code in record["code"]]
             )
-            for mem_id, codes in member_next_known.items()
-        }
-
-    print("Total members with codes: {}".format(str(df_member.shape[0])))
+        )
+        for mem_id, record in dict_prior.items()
+    }
+    member_known_current = {
+        mem_id: set(
+            itertools.chain(
+                *[mappings.get(code, []) for code in record["code"]]
+            )
+        )
+        for mem_id, record in dict_current.items()
+    }
 
     # Vectorizing
     print("Vectoring...")
-
-    df_vector = df_member[["MEMBER", "CODE"]].copy()
-    df_vector["temp"] = np.nan
-    df_vector["temp"] = df_vector["temp"].astype(object)
-
-    for idx, row in df_vector.iterrows():
-        vector = vectorizers.build_member_input_vector(row["CODE"], variables)
-        df_vector.at[idx, "temp"] = vector
-    del df_vector["CODE"]
-
-    print("Running ML...")
-    input_data = csr_matrix(vstack(df_vector["temp"].tolist()))
-    for k, v in ensemble.items():
-        if v["classifier"]:
-            scores = v["classifier"].predict_proba(input_data)[:, 1]
-            df_vector = pd.concat(
-                [df_vector, pd.Series(scores, name=k)], axis=1
-            )
-    del df_vector["temp"]
-    gc.collect()
-
-    df_vector = df_vector.dropna(axis=1, how="any")
-
-    df_condition = pd.melt(
-        df_vector,
-        id_vars=["MEMBER"],
-        value_vars=[i for i in df_vector.columns if i.startswith("HCC")],
+    vector_prior = csr_matrix(
+        vstack(
+            [
+                utils.build_member_input_vector(
+                    dict_prior.get(mem_id, {'code': []})['code'], variables
+                )
+                for mem_id in MEMBER_LIST
+            ]
+        )
     )
-    df_condition.columns = ["MEMBER", "HCC", "CONFIDENCE"]
-    df_condition["CONFIDENCE_NORM"] = df_condition["CONFIDENCE"].map(
-        lambda x: np.tanh(np.power(x, 1 / 2) * 4)
-        if x < 0.012091892
-        else np.power(x, 1 / 5)
-    )
-    df_condition = df_condition.loc[
-        df_condition["CONFIDENCE_NORM"] >= threshold, :
-    ]
-    df_condition["CONFIDENCE"] = df_condition["CONFIDENCE"].round(4)
-    df_condition["CONFIDENCE_NORM"] = df_condition["CONFIDENCE_NORM"].round(4)
-    df_condition["TP_FLAG"] = df_condition[["MEMBER", "HCC"]].apply(
-        lambda x: 1 if x[1] in member_known.get(x[0], []) else 0, axis=1
+    vector_current = csr_matrix(
+        vstack(
+            [
+                utils.build_member_input_vector(
+                    dict_prior.get(mem_id, {'code': []})['code']
+                    + dict_current.get(mem_id, {'code': []})['code'],
+                    variables,
+                )
+                for mem_id in MEMBER_LIST
+            ]
+        )
     )
 
+    # running machine learning
+    print("Running ML for retrospective analysis...")
+    condition_retro = utils.run_ml(
+        ensemble, MEMBER_LIST, vector_prior, threshold
+    )
+    condition_retro["known"] = condition_retro.apply(
+        lambda x: 1 if x.hcc in member_known_prior.get(x.mem_id, []) else 0,
+        axis=1,
+    )
+
+    print("Running ML for prospective anlysis...")
+    condition_prosp = utils.run_ml(
+        ensemble, MEMBER_LIST, vector_current, threshold
+    )
+    condition_prosp["known"] = condition_prosp.apply(
+        lambda x: 1 if x.hcc in member_known_current.get(x.mem_id, []) else 0,
+        axis=1,
+    )
+    # TODO: come up with better flag system of UCCC for pra_id matching purpose
+    condition_prosp["uccc"] = condition_prosp.apply(
+        lambda x: 1
+        if x.hcc in member_known_prior.get(x.mem_id, []) and x.known == 0
+        else 0,
+        axis=1,
+    )
+
+    # TODO: engineer this process: optimize implementation; design output
     if get_indicators:
         print("Finding indicators...")
-        del df_vector
-        gc.collect()
 
         filtered_condtions = (
-            df_condition.groupby("MEMBER")["HCC"].agg(list).to_dict()
+            df_condition.groupby("mem_id")["hcc"].agg(list).to_dict()
         )
-        df_member["FEATURE_IMPORTANCE"] = np.nan
-        df_member["FEATURE_IMPORTANCE"] = df_member[
-            "FEATURE_IMPORTANCE"
-        ].astype(object)
 
         df_list = []
         for HCC in ensemble.keys():
@@ -486,14 +538,11 @@ def core_ml(
             )
             df_HCC_member = df_member.copy(deep=True)
             df_HCC_member["HCC"] = HCC
-            coef_matrix = explainer.shap_values(input_data)
-            coef_matrix = input_data.toarray() * coef_matrix
+            coef_matrix = explainer.shap_values(vector_prior)
+            coef_matrix = vector_prior.toarray() * coef_matrix
 
             for idx, member in df_HCC_member.iterrows():
-                try:
-                    if HCC not in filtered_condtions[member["MEMBER"]]:
-                        continue
-                except KeyError:
+                if HCC not in filtered_condtions.get(member["MEMBER"], []):
                     continue
 
                 codes = member["CODE"]
@@ -528,7 +577,7 @@ def core_ml(
             gc.collect()
 
         df_member = pd.concat(df_list, axis=0)
-        del input_data, df_list
+        del vector_prior, df_list
         gc.collect()
         df_condition = pd.merge(
             df_condition, df_member, on=["MEMBER", "HCC"], how="left"
@@ -587,10 +636,10 @@ def update(model, year_of_service):
         + str(model)
         + " ##############################"
     )
-    training_set = utils.get_training_set(year_of_service, model)
-    utils.update_mappings(model)
-    utils.update_variables(training_set, model)
-    utils.update_ensembles(training_set, model)
+    training_set = training.get_training_set(year_of_service, model)
+    training.update_mappings(model)
+    training.update_variables(training_set, model)
+    training.update_ensembles(training_set, model)
     print(
         "############################ Finished Training Model "
         + str(model)
