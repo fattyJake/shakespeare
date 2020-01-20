@@ -12,7 +12,7 @@
 ###############################################################################
 # A python package designed to detect gaps using client claim data
 #
-# Authors:  William Kinsman, Chenyu (Oliver) Ha, Yage Wang
+# Authors:  Yage Wang, William Kinsman, Chenyu (Oliver) Ha
 # Created:  11.02.2017
 # Version:  2.6.0
 ###############################################################################
@@ -106,11 +106,38 @@ def detect_internal(
     
     Return
     --------
-    member's condition:
-        [(memberID, HCC, prob, tp_flag)]
-        OR
-        [(memberID, HCC, prob, tp_flag, top_n_codes, top_n_encounter_id,
-            top_n_coefficient)]
+    final_results : dict
+    {
+        'retrospective': [
+            {
+                'mem_id': int,
+                'gaps': [
+                    {
+                        'hcc': str,
+                        'confidence': float,
+                        'known': bool,
+                        *['top_indicators': list,]
+                        *['pra_id': list]
+                    }
+                ]
+            }
+        ],
+        'prospective': [
+            {
+                'mem_id': int,
+                'gaps': [
+                    {
+                        'hcc': str,
+                        'confidence': float,
+                        'known': bool,
+                        'uccc': bool,
+                        *['top_indicators': list,]
+                        *['pra_id': list]
+                    }
+                ]
+            }
+        ]
+    }
 
     Examples
     --------
@@ -118,30 +145,62 @@ def detect_internal(
     >>> detect_internal(
             payer="CD_GATEWAY",
             server="CARABWDB06",
-            date_start='2017-01-01',
-            date_end='2017-12-31',
+            date_start='2018-01-01',
+            date_end='2019-04-15',
             threshold=0.9,
             top_n_indicator=5,
             get_indicators=True
         )
 
-        [(33330, 'HCC19', 0.9041, 0.9800, 0,
-          ['HCPCS-A5500', 'CPT-82043', 'ICD10-I10', 'CPT-83036', 'ICD10-E785'],
-          [167816,174530,219484],
-          [1.4374, 0.7924, 0.4818, 0.38, 0.2694]),
-         (33333, 'HCC19', 0.8445, 0.9668,, 0,
-          ['NDC9-000882219', 'ICD10-I10', 'CPT-82043', 'CPT-83036', 'ICD10-E039'],
-          [11199,164276,152785],
-          [1.3392, 0.6136, 0.5779, 0.4449, 0.3895]),
-         ...
-         (111382, 'HCC114', 0.6686, 0.9226, 1,
-          ['ICD10-J189', 'ICD10Proc-5A1955Z', 'ICD10-R918', 'ICD10-Z4682', 'ICD10-Z66'],
-          [123838, 164643, 176622, 76237, 83652],
-          [1.987, 1.0033, 0.6202, 0.5484, 0.4784]),
-         (312068, 'HCC114', 0.6505, 0.9176, 1,
-          ['ICD10-J189', 'ICD10Proc-5A1955Z', 'ICD10-Z4682', 'CPT-99233', 'ICD10-R918'],
-          [114646, 118574, 118237, 24822, 149849, 14239],
-          [1.8562, 1.5598, 0.8454, 0.6191, 0.6101])]
+        {
+            "retrospective": [
+                {
+                    "mem_id": 23023,
+                    "gaps": [
+                        {
+                            "hcc": "HCC188",
+                            "confidence": 0.990729,
+                            "known": 1,
+                            "top_indicators": [
+                                "ICD10DX-K9423",
+                                "ICD10DX-K9429",
+                                "ICD10DX-Z931"
+                            ],
+                            "pra_id": [
+                                505,
+                                131157
+                            ]
+                        },
+                        ...
+                    ]
+                },
+                ...
+            ],
+            "prospective": [
+                {
+                    "mem_id": 23023,
+                    "gaps": [
+                        {
+                            "hcc": "HCC188",
+                            "confidence": 0.98871,
+                            "known": 0,
+                            "uccc": 1,
+                            "top_indicators": [
+                                "ICD10DX-K9423",
+                                "ICD10DX-K9429",
+                                "ICD10DX-Z931"
+                            ],
+                            "pra_id": [
+                                505,
+                                131157
+                            ]
+                        },
+                        ...
+                    ]
+                },
+                ...
+            ]
+        }
     """
 
     # initialize
@@ -210,8 +269,8 @@ def detect_internal(
             memberID_list[i : i + 40000]
             for i in range(0, len(memberID_list), 40000)
         ]
-        # TODO: change results structure once output fixed
-        results = []
+        
+        results = {"retrospective": [], "prospective": []}
         print(f"Total batches: {len(memberID_list)}")
         for batch, sub_mem in enumerate(memberID_list):
             print(
@@ -232,17 +291,18 @@ def detect_internal(
 
             if table.shape[0] == 0:
                 continue
-            results.extend(
-                core_ml(
-                    table,
-                    year,
-                    model,
-                    auto_update,
-                    threshold,
-                    get_indicators,
-                    top_n_indicator,
-                )
+            sub_results = core_ml(
+                table,
+                year,
+                model,
+                auto_update,
+                threshold,
+                get_indicators,
+                top_n_indicator,
             )
+            results['retrospective'].extend(sub_results['retrospective'])
+            results['prospective'].extend(sub_results['prospective'])
+
             del table
             gc.collect()
 
@@ -260,34 +320,93 @@ def detect_api(json_body: dict):
     
     Return
     --------
-    member's condition:
-        [(memberID, HCC, prob, norm_prob, tp_flag)]
-        OR
-        [(memberID, HCC, prob, norm_prob, tp_flag, top_n_codes,
-            top_n_encounter_id, top_n_coefficient)]
+    final_results : dict
+    {
+        'retrospective': [
+            {
+                'mem_id': int,
+                'gaps': [
+                    {
+                        'hcc': str,
+                        'confidence': float,
+                        'known': bool,
+                        *['top_indicators': list,]
+                        *['pra_id': list]
+                    }
+                ]
+            }
+        ],
+        'prospective': [
+            {
+                'mem_id': int,
+                'gaps': [
+                    {
+                        'hcc': str,
+                        'confidence': float,
+                        'known': bool,
+                        'uccc': bool,
+                        *['top_indicators': list,]
+                        *['pra_id': list]
+                    }
+                ]
+            }
+        ]
+    }
 
     Examples
     --------
     >>> from shakespeare import detect_api
     >>> detect_api(payload)
 
-        [(33330, 'HCC19', 0.9041, 0.9800, 0,
-          ['HCPCS-A5500', 'CPT-82043', 'ICD10-I10', 'CPT-83036', 'ICD10-E785'],
-          [167816,174530,219484],
-          [1.4374, 0.7924, 0.4818, 0.38, 0.2694]),
-         (33333, 'HCC19', 0.8445, 0.9668,, 0,
-          ['NDC9-000882219', 'ICD10-I10', 'CPT-82043', 'CPT-83036', 'ICD10-E039'],
-          [11199,164276,152785],
-          [1.3392, 0.6136, 0.5779, 0.4449, 0.3895]),
-         ...
-         (111382, 'HCC114', 0.6686, 0.9226, 1,
-          ['ICD10-J189', 'ICD10Proc-5A1955Z', 'ICD10-R918', 'ICD10-Z4682', 'ICD10-Z66'],
-          [123838, 164643, 176622, 76237, 83652],
-          [1.987, 1.0033, 0.6202, 0.5484, 0.4784]),
-         (312068, 'HCC114', 0.6505, 0.9176, 1,
-          ['ICD10-J189', 'ICD10Proc-5A1955Z', 'ICD10-Z4682', 'CPT-99233', 'ICD10-R918'],
-          [114646, 118574, 118237, 24822, 149849, 14239],
-          [1.8562, 1.5598, 0.8454, 0.6191, 0.6101])]
+        {
+            "retrospective": [
+                {
+                    "mem_id": 23023,
+                    "gaps": [
+                        {
+                            "hcc": "HCC188",
+                            "confidence": 0.990729,
+                            "known": 1,
+                            "top_indicators": [
+                                "ICD10DX-K9423",
+                                "ICD10DX-K9429",
+                                "ICD10DX-Z931"
+                            ],
+                            "pra_id": [
+                                505,
+                                131157
+                            ]
+                        },
+                        ...
+                    ]
+                },
+                ...
+            ],
+            "prospective": [
+                {
+                    "mem_id": 23023,
+                    "gaps": [
+                        {
+                            "hcc": "HCC188",
+                            "confidence": 0.98871,
+                            "known": 0,
+                            "uccc": 1,
+                            "top_indicators": [
+                                "ICD10DX-K9423",
+                                "ICD10DX-K9429",
+                                "ICD10DX-Z931"
+                            ],
+                            "pra_id": [
+                                505,
+                                131157
+                            ]
+                        },
+                        ...
+                    ]
+                },
+                ...
+            ]
+        }
     """
 
     table = []
@@ -315,7 +434,6 @@ def detect_api(json_body: dict):
     )
 
 
-# TODO: determine parameter list
 def core_ml(
     table: pd.DataFrame,
     target_year: int,
@@ -357,11 +475,38 @@ def core_ml(
     
     Return
     --------
-    member's condition:
-        [(memberID, HCC, prob, norm_prob, tp_flag)]
-        OR
-        [(memberID, HCC, prob, norm_prob, tp_flag, top_n_codes,
-            top_n_encounter_id, top_n_coefficient)]
+    final_results : dict
+    {
+        'retrospective': [
+            {
+                'mem_id': int,
+                'gaps': [
+                    {
+                        'hcc': str,
+                        'confidence': float,
+                        'known': bool,
+                        *['top_indicators': list,]
+                        *['pra_id': list]
+                    }
+                ]
+            }
+        ],
+        'prospective': [
+            {
+                'mem_id': int,
+                'gaps': [
+                    {
+                        'hcc': str,
+                        'confidence': float,
+                        'known': bool,
+                        'uccc': bool,
+                        *['top_indicators': list,]
+                        *['pra_id': list]
+                    }
+                ]
+            }
+        ]
+    }
 
     Examples
     --------
@@ -373,24 +518,56 @@ def core_ml(
             top_n_indicator=5,
             get_indicators=True
         )
-
-        [(33330, 'HCC19', 0.9041, 0.9800, 0,
-          ['HCPCS-A5500', 'CPT-82043', 'ICD10-I10', 'CPT-83036', 'ICD10-E785'],
-          [167816,174530,219484],
-          [1.4374, 0.7924, 0.4818, 0.38, 0.2694]),
-         (33333, 'HCC19', 0.8445, 0.9668,, 0,
-          ['NDC9-000882219', 'ICD10-I10', 'CPT-82043', 'CPT-83036', 'ICD10-E039'],
-          [11199,164276,152785],
-          [1.3392, 0.6136, 0.5779, 0.4449, 0.3895]),
-         ...
-         (111382, 'HCC114', 0.6686, 0.9226, 1,
-          ['ICD10-J189', 'ICD10Proc-5A1955Z', 'ICD10-R918', 'ICD10-Z4682', 'ICD10-Z66'],
-          [123838, 164643, 176622, 76237, 83652],
-          [1.987, 1.0033, 0.6202, 0.5484, 0.4784]),
-         (312068, 'HCC114', 0.6505, 0.9176, 1,
-          ['ICD10-J189', 'ICD10Proc-5A1955Z', 'ICD10-Z4682', 'CPT-99233', 'ICD10-R918'],
-          [114646, 118574, 118237, 24822, 149849, 14239],
-          [1.8562, 1.5598, 0.8454, 0.6191, 0.6101])]
+        
+        {
+            "retrospective": [
+                {
+                    "mem_id": 23023,
+                    "gaps": [
+                        {
+                            "hcc": "HCC188",
+                            "confidence": 0.990729,
+                            "known": 1,
+                            "top_indicators": [
+                                "ICD10DX-K9423",
+                                "ICD10DX-K9429",
+                                "ICD10DX-Z931"
+                            ],
+                            "pra_id": [
+                                505,
+                                131157
+                            ]
+                        },
+                        ...
+                    ]
+                },
+                ...
+            ],
+            "prospective": [
+                {
+                    "mem_id": 23023,
+                    "gaps": [
+                        {
+                            "hcc": "HCC188",
+                            "confidence": 0.98871,
+                            "known": 0,
+                            "uccc": 1,
+                            "top_indicators": [
+                                "ICD10DX-K9423",
+                                "ICD10DX-K9429",
+                                "ICD10DX-Z931"
+                            ],
+                            "pra_id": [
+                                505,
+                                131157
+                            ]
+                        },
+                        ...
+                    ]
+                },
+                ...
+            ]
+        }
     """
     print("Start: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 

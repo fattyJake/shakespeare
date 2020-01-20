@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###############################################################################
-# Module:      vectorizers
+# Module:      utils
 # Description: repo of utilities
 # Authors:     Yage Wang
 # Created:     11.06.2017
@@ -54,6 +54,24 @@ def build_member_input_vector(member_codes_found, variables):
 
 
 def preprocess_table(table, target_year):
+    """
+    Preprocess DataFrame of raw data: specialists filtering and divide table
+    into prior period and current periord as form of grouped dictionary
+
+    Parameters
+    --------
+    table : pandas.DataFrame
+        a table with coulumn ['mem_id', 'pra_id', 'spec_id', 'year', 'code']
+        
+    target_year : int
+        target service year
+    
+    Return
+    --------
+    dict_prior, dict_current
+        {mem_id: {"code": [], "pra_id": []}}
+    """
+
     SPECIALISTS = {
         3, 10, 15, 17, 22, 24, 25, 27, 29, 31, 42, 43, 44, 45, 50, 59, 60, 66,
         70, 72, 73, 74, 75, 77, 78, 79, 84, 87, 88, 89, 93, 95, 119, 121, 123,
@@ -94,10 +112,35 @@ def preprocess_table(table, target_year):
     )
 
 
-def run_ml(ensemble, MEMBER_LIST, vector, threshold):
+def run_ml(
+    ensemble: dict,
+    MEMBER_LIST: list,
+    vector: csr_matrix,
+    threshold: float
+):
     """
     ML process and post-processing
+
+    Parameters
+    --------
+    ensemble : dict
+        ML HCC classifier dict
+        
+    MEMBER_LIST : list
+        fized order of member ID list
+    
+    vector : scipy.sparse.csr_matrix
+        ML input sparse matrix
+    
+    threshold : float
+        a float between 0 and 1 for filtering output confidence above it
+    
+    Return
+    --------
+    df_condition : pd.DataFrame
+        table with column ['mem_id', 'hcc', 'confidence', 'known' *[,'uccc']]
     """
+
     df_condition = {"mem_id": MEMBER_LIST}
     for k, v in ensemble.items():
         if v["classifier"]:
@@ -134,6 +177,58 @@ def get_indicators(
     mappings: dict,
     variables: list,
 ):
+    """
+    Adding supporting indicators to results for known and suspected conditions
+
+    Parameters
+    --------
+    ensemble : dict
+        ML HCC classifier dict
+        
+    MEMBER_LIST : list
+        fized order of member ID list
+    
+    condition : pandas.DataFrame
+        table with column ['mem_id', 'hcc', 'confidence', 'known' *[,'uccc']]
+    
+    vector : scipy.sparse.csr_matrix
+        ML input sparse matrix
+    
+    top_n_indicator : int
+        how many indicators to output for each member each HCC
+    
+    dict_prior : dict
+        prior codes and pra_ids from `preprocess_table`
+
+    dict_current : dict
+        current codes and pra_ids from `preprocess_table`
+    
+    mappings : dict
+        mappings from ICDs to HCCs
+
+    variables : list
+        ML variables space
+    
+    Return
+    --------
+    results : list
+        [
+            {
+                'mem_id': int,
+                'gaps': [
+                    {
+                        'hcc': str,
+                        'confidence': float,
+                        'known': bool,
+                        *['uccc': bool,]
+                        'top_indicators': list,
+                        'pra_id': list
+                    }
+                ]
+            }
+        ]
+    """
+
     coef_matrixes = {}
     for HCC in ensemble.keys():
         if ensemble[HCC]["classifier"] is None:

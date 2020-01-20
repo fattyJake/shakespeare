@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+###############################################################################
+# Module:      training
+# Description: repo of ML training functions
+# Authors:     Yage Wang
+# Created:     05.18.2018
+###############################################################################
+
 import os
 import pickle
 import itertools
