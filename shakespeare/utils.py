@@ -7,9 +7,13 @@
 ###############################################################################
 
 import re
+import operator
+import itertools
+import gc
 import pyodbc
 import numpy as np
 import pandas as pd
+import shap
 from scipy.sparse import csr_matrix
 
 
@@ -117,6 +121,153 @@ def run_ml(ensemble, MEMBER_LIST, vector, threshold):
     # df_condition["confidence_norm"] = df_condition["confidence_norm"].round(6)
 
     return df_condition
+
+
+def get_indicators(
+    ensemble: dict,
+    MEMBER_LIST: list,
+    condition: pd.DataFrame,
+    vector: csr_matrix,
+    top_n_indicator: int,
+    dict_prior: dict,
+    dict_current: dict,
+    mappings: dict,
+    variables: list,
+):
+    coef_matrixes = {}
+    for HCC in ensemble.keys():
+        if ensemble[HCC]["classifier"] is None:
+            continue
+
+        explainer = shap.TreeExplainer(
+            ensemble[HCC]["classifier"]
+            .calibrated_classifiers_[0]
+            .base_estimator
+        )
+        coef_matrix = explainer.shap_values(vector)
+        coef_matrix = csr_matrix(vector.multiply(coef_matrix))
+        coef_matrixes[HCC] = coef_matrix
+
+        del explainer
+        gc.collect()
+
+    condition = condition.set_index(["mem_id", "hcc"]).to_dict("index")
+
+    for HCC in ensemble.keys():
+        if ensemble[HCC]["classifier"] is None:
+            continue
+        coef_matrix = coef_matrixes[HCC].toarray()
+
+        for idx, mem_id in enumerate(MEMBER_LIST):
+            if mem_id not in dict_prior:
+                continue
+
+            if (mem_id, HCC) not in condition:
+                continue
+
+            prior_codes = dict_prior.get(mem_id, {"code": []})["code"]
+            current_codes = dict_current.get(mem_id, {"code": []})["code"]
+            if not prior_codes:
+                continue
+
+            # prospective known mappings
+            if (
+                "uccc" in condition[(mem_id, HCC)]
+                and condition[(mem_id, HCC)]["known"] == 1
+            ):
+                mapped_codes = [
+                    c for c in current_codes if HCC in mappings.get(c, [])
+                ]
+                indices = [current_codes.index(code) for code in mapped_codes]
+                pra_list = itertools.chain(
+                    *[dict_current[mem_id]["pra_id"][i] for i in indices]
+                )
+                condition[(mem_id, HCC)]["top_indicators"] = mapped_codes
+                condition[(mem_id, HCC)]["pra_id"] = list(
+                    unique_keeping_order([pra for pra in pra_list if pra > -1])
+                )
+                continue
+
+            # retrospective known mappings or prospective UCCC mappings
+            if (
+                condition[(mem_id, HCC)].get("uccc", 0) == 1
+                or condition[(mem_id, HCC)]["known"] == 1
+            ):
+                mapped_codes = [
+                    c for c in prior_codes if HCC in mappings.get(c, [])
+                ]
+                indices = [prior_codes.index(code) for code in mapped_codes]
+                pra_list = itertools.chain(
+                    *[dict_prior[mem_id]["pra_id"][i] for i in indices]
+                )
+                condition[(mem_id, HCC)]["top_indicators"] = mapped_codes
+                condition[(mem_id, HCC)]["pra_id"] = list(
+                    unique_keeping_order([pra for pra in pra_list if pra > -1])
+                )
+                continue
+
+            # suspected SHAP indicators
+            if "uccc" in condition[(mem_id, HCC)]:
+                codes = prior_codes + current_codes
+                pra_list = (
+                    dict_prior[mem_id]["pra_id"]
+                    + dict_current.get(mem_id, {"pra_id": []})["pra_id"]
+                )
+            else:
+                codes = prior_codes
+                pra_list = dict_prior[mem_id]["pra_id"]
+            i = list(np.where(coef_matrix[idx] > 0)[0])
+            coef_dict = dict(
+                zip(
+                    [variables[index] for index in i],
+                    list(coef_matrix[idx][i]),
+                )
+            )
+            coef_dict = dict(
+                sorted(
+                    coef_dict.items(), key=operator.itemgetter(1), reverse=True
+                )[:top_n_indicator]
+            )
+            indices = [codes.index(code) for code in coef_dict]
+
+            condition[(mem_id, HCC)]["top_indicators"] = list(coef_dict)
+            pra_list = itertools.chain(*[pra_list[i] for i in indices])
+            condition[(mem_id, HCC)]["pra_id"] = list(
+                unique_keeping_order([pra for pra in pra_list if pra > -1])
+            )
+
+        del coef_matrix
+        gc.collect()
+    
+    condition = [
+        {"mem_id": mh_tuple[0], "gaps": {**{"hcc": mh_tuple[1]}, **d}}
+        for mh_tuple, d in condition.items()
+    ]
+    condition = sorted(condition, key=operator.itemgetter('mem_id'))
+    condition = [
+        {"mem_id": key, "gaps": [d["gaps"] for d in list(group)]}
+        for key, group in itertools.groupby(
+            condition, key=lambda x: x['mem_id']
+        )
+    ]
+
+    return condition
+
+
+def df_to_json(condition):
+    condition = condition.groupby('mem_id').agg(list).to_dict('index')
+    condition = [
+        {
+            "mem_id": mem_id,
+            "gaps": [
+                {k: i[j] for j, k in enumerate(d.keys())}
+                for i in zip(*list(d.values()))
+            ]
+        }
+        for mem_id, d in condition.items()
+    ]
+
+    return condition
 
 
 def get_model_name(model):

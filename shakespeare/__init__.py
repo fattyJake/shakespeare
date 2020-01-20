@@ -520,71 +520,44 @@ def core_ml(
 
     # TODO: engineer this process: optimize implementation; design output
     if get_indicators:
-        print("Finding indicators...")
-
-        filtered_condtions = (
-            df_condition.groupby("mem_id")["hcc"].agg(list).to_dict()
+        print("Finding retrospective indicators...")
+        retro_results = utils.get_indicators(
+            ensemble=ensemble,
+            MEMBER_LIST=MEMBER_LIST,
+            condition=condition_retro,
+            vector=vector_prior,
+            top_n_indicator=top_n_indicator,
+            dict_prior=dict_prior,
+            dict_current=dict_current,
+            mappings=mappings,
+            variables=variables,
         )
 
-        df_list = []
-        for HCC in ensemble.keys():
-            if ensemble[HCC]["classifier"] is None:
-                continue
-
-            explainer = shap.TreeExplainer(
-                ensemble[HCC]["classifier"]
-                .calibrated_classifiers_[0]
-                .base_estimator
-            )
-            df_HCC_member = df_member.copy(deep=True)
-            df_HCC_member["HCC"] = HCC
-            coef_matrix = explainer.shap_values(vector_prior)
-            coef_matrix = vector_prior.toarray() * coef_matrix
-
-            for idx, member in df_HCC_member.iterrows():
-                if HCC not in filtered_condtions.get(member["MEMBER"], []):
-                    continue
-
-                codes = member["CODE"]
-                i = list(np.where(coef_matrix[idx] > 0)[0])
-                coef_dict = dict(
-                    zip(
-                        [variables[index] for index in i],
-                        list(coef_matrix[idx][i]),
-                    )
-                )
-                coef_dict = dict(
-                    sorted(
-                        coef_dict.items(),
-                        key=operator.itemgetter(1),
-                        reverse=True,
-                    )[:top_n_indicator]
-                )
-
-                indices = [codes.index(code) for code in coef_dict]
-                df_HCC_member.at[idx, "CODE"] = [codes[i] for i in indices]
-                pra_list = itertools.chain(
-                    *[df_member.at[idx, "PRA_ID"][i] for i in indices]
-                )
-                df_HCC_member.at[idx, "PRA_ID"] = list(
-                    utils.unique_keeping_order(pra_list)
-                )
-                df_HCC_member.at[idx, "FEATURE_IMPORTANCE"] = list(
-                    coef_dict.values()
-                )
-            df_list.append(df_HCC_member)
-            del explainer, coef_matrix
-            gc.collect()
-
-        df_member = pd.concat(df_list, axis=0)
-        del vector_prior, df_list
-        gc.collect()
-        df_condition = pd.merge(
-            df_condition, df_member, on=["MEMBER", "HCC"], how="left"
+        print("Finding prospective indicators...")
+        pros_results = utils.get_indicators(
+            ensemble=ensemble,
+            MEMBER_LIST=MEMBER_LIST,
+            condition=condition_prosp,
+            vector=vector_current,
+            top_n_indicator=top_n_indicator,
+            dict_prior=dict_prior,
+            dict_current=dict_current,
+            mappings=mappings,
+            variables=variables,
         )
+
+        final_results = {
+            "retrospective": retro_results,
+            "prospective": pros_results
+        }
+    else:
+        final_results = {
+            "retrospective": utils.df_to_json(condition_retro),
+            "prospective": utils.df_to_json(condition_prosp)
+        }
 
     print("End  : " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    return [tuple(x) for x in df_condition.values]
+    return final_results
 
 
 def update(model, year_of_service):
