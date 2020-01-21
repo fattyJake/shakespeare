@@ -6,14 +6,19 @@
 # Created:     11.06.2017
 ###############################################################################
 
+import os
 import re
 import operator
 import itertools
 import gc
+import zipfile
+import io
+import pickle
 import pyodbc
 import numpy as np
 import pandas as pd
 import shap
+import requests
 from scipy.sparse import csr_matrix
 
 
@@ -116,7 +121,6 @@ def run_ml(
     ensemble: dict,
     MEMBER_LIST: list,
     vector: csr_matrix,
-    threshold: float
 ):
     """
     ML process and post-processing
@@ -131,9 +135,6 @@ def run_ml(
     
     vector : scipy.sparse.csr_matrix
         ML input sparse matrix
-    
-    threshold : float
-        a float between 0 and 1 for filtering output confidence above it
     
     Return
     --------
@@ -159,8 +160,6 @@ def run_ml(
         if x < 0.012091892
         else np.power(x, 1 / 5)
     )
-    df_condition = df_condition.loc[df_condition["confidence"] >= threshold, :]
-    df_condition["confidence"] = df_condition["confidence"].round(6)
     # df_condition["confidence_norm"] = df_condition["confidence_norm"].round(6)
 
     return df_condition
@@ -303,10 +302,10 @@ def get_indicators(
 
             # suspected SHAP indicators
             if "uccc" in condition[(mem_id, HCC)]:
-                codes = prior_codes + current_codes
+                codes = current_codes + prior_codes
                 pra_list = (
-                    dict_prior[mem_id]["pra_id"]
-                    + dict_current.get(mem_id, {"pra_id": []})["pra_id"]
+                    dict_current.get(mem_id, {"pra_id": []})["pra_id"]
+                    + dict_prior[mem_id]["pra_id"]
                 )
             else:
                 codes = prior_codes
@@ -391,6 +390,155 @@ def get_model_name(model):
     return re.findall("""^[a-zA-Z]*""", model_name)[0].upper()
 
 
+def update_code_desc():
+    db = pyodbc.connect(r"DRIVER=SQL Server;" r"SERVER=MPBWDB1;")
+
+    code_desc = {}
+    # CPT
+    sql = """
+        SELECT [CPTCode], [MediumDescription]
+        FROM [Medref].[dbo].[CPT]
+        ORDER BY CPTCode, CodeEffectiveDate DESC
+    """
+    cpt_codes = (
+        pd.read_sql_query(sql, db)
+        .groupby('CPTCode')['MediumDescription']
+        .first()
+        .to_dict()
+    )
+    code_desc.update({'CPT-'+c: d for c, d in cpt_codes.items()})
+
+    # DRG
+    sql = """
+        DECLARE @MAX_VERSION INT = 
+            (SELECT MAX(DRGVersion)
+             FROM [Medref].[dbo].[DRG]);
+        SELECT [DRGCode], [Description]
+        FROM [Medref].[dbo].[DRG]
+        WHERE DRGVersion = @MAX_VERSION
+    """
+    drg_codes = (
+        pd.read_sql_query(sql, db)
+        .groupby('DRGCode')['Description']
+        .first()
+        .to_dict()
+    )
+    code_desc.update({'DRG-'+c: d for c, d in drg_codes.items()})
+
+    # HCPCS
+    sql = """
+        SELECT [HCPCSCode], [ShortDescription]
+        FROM [Medref].[dbo].[HCPCS]
+        ORDER BY HCPCSCode, CodeEffectiveDate DESC
+    """
+    hcpcs_codes = (
+        pd.read_sql_query(sql, db)
+        .groupby('HCPCSCode')['ShortDescription']
+        .first()
+        .to_dict()
+    )
+    code_desc.update({'HCPCS-'+c: d for c, d in hcpcs_codes.items()})
+
+    # ICD9DX
+    sql = """
+        SELECT [ICD9Code], [ShortDescription]
+        FROM [Medref].[dbo].[ICD9Code]
+        WHERE CodeType = 'D'
+        ORDER BY ICD9Code, CodeEffectiveDate DESC
+    """
+    icd9dx_codes = (
+        pd.read_sql_query(sql, db)
+        .groupby('ICD9Code')['ShortDescription']
+        .first()
+        .to_dict()
+    )
+    code_desc.update({'ICD9DX-'+c: d for c, d in icd9dx_codes.items()})
+
+    # ICD9PX
+    sql = """
+        SELECT [ICD9Code], [ShortDescription]
+        FROM [Medref].[dbo].[ICD9Code]
+        WHERE CodeType = 'P'
+        ORDER BY ICD9Code, CodeEffectiveDate DESC
+    """
+    icd9px_codes = (
+        pd.read_sql_query(sql, db)
+        .groupby('ICD9Code')['ShortDescription']
+        .first()
+        .to_dict()
+    )
+    code_desc.update({'ICD9PX-'+c: d for c, d in icd9px_codes.items()})
+
+    # ICD10DX
+    sql = """
+        SELECT [ICD10DiagnosisCode], [ShortDescription]
+        FROM [Medref].[dbo].[ICD10DiagnosisCode]
+        ORDER BY ICD10DiagnosisCode, CodeEffectiveDate DESC
+    """
+    icd10dx_codes = (
+        pd.read_sql_query(sql, db)
+        .groupby('ICD10DiagnosisCode')['ShortDescription']
+        .first()
+        .to_dict()
+    )
+    code_desc.update({'ICD10DX-'+c: d for c, d in icd10dx_codes.items()})
+
+    # ICD10PX
+    sql = """
+        SELECT [ICD10ProcedureCode], [ShortDescription]
+        FROM [Medref].[dbo].[ICD10ProcedureCode]
+        ORDER BY ICD10ProcedureCode, CodeEffectiveDate DESC
+    """
+    icd10px_codes = (
+        pd.read_sql_query(sql, db)
+        .groupby('ICD10ProcedureCode')['ShortDescription']
+        .first()
+        .to_dict()
+    )
+    code_desc.update({'ICD10PX-'+c: d for c, d in icd10px_codes.items()})
+
+    # NDC9
+    response = requests.get("https://www.accessdata.fda.gov/cder/ndctext.zip")
+    z = zipfile.ZipFile(io.BytesIO(response.content))
+    z.extractall()
+    ndc_codes = pd.read_csv(
+        z.open('product.txt'), sep='\t', header=0, encoding="ISO-8859-1"
+    )
+    z.close()
+
+    ndc_codes.PRODUCTNDC = ndc_codes.PRODUCTNDC.map(ndc10_to_ndc9)
+    ndc_codes = (
+        ndc_codes
+        .groupby('PRODUCTNDC')['NONPROPRIETARYNAME']
+        .first()
+        .to_dict()
+    )
+    code_desc.update({'NDC9-' + c: d for c, d in ndc_codes.items()})
+
+    pickle.dump(
+        code_desc,
+        open(
+            os.path.join(
+                os.path.dirname(os.path.realpath(__file__)),
+                r"pickle_files",
+                r"codes",
+            ),
+            "wb",
+        )
+    )
+
 def unique_keeping_order(iterable):
     seen = set()
     return [x for x in iterable if not (x in seen or seen.add(x))]
+
+
+def ndc10_to_ndc9(code):
+    labeler, product = code.split('-')
+    if len(labeler) == 4 and len(product) == 4:
+        return '0' + labeler + product
+    elif len(labeler) == 5 and len(product) == 3:
+        return labeler + '0' + product
+    elif len(labeler) == 5 and len(product) == 4:
+        return labeler + product
+    else:
+        return labeler + product

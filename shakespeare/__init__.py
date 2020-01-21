@@ -671,18 +671,20 @@ def core_ml(
 
     # running machine learning
     print("Running ML for retrospective analysis...")
-    condition_retro = utils.run_ml(
-        ensemble, MEMBER_LIST, vector_prior, threshold
-    )
+    condition_retro = utils.run_ml(ensemble, MEMBER_LIST, vector_prior)
     condition_retro["known"] = condition_retro.apply(
         lambda x: 1 if x.hcc in member_known_prior.get(x.mem_id, []) else 0,
         axis=1,
     )
+    condition_retro = condition_retro.loc[
+        (condition_retro["confidence"] >= threshold)
+        | (condition_retro["known"] == 1),
+        :
+    ]
+    condition_retro["confidence"] = condition_retro["confidence"].round(6)
 
     print("Running ML for prospective anlysis...")
-    condition_prosp = utils.run_ml(
-        ensemble, MEMBER_LIST, vector_current, threshold
-    )
+    condition_prosp = utils.run_ml(ensemble, MEMBER_LIST, vector_current)
     condition_prosp["known"] = condition_prosp.apply(
         lambda x: 1 if x.hcc in member_known_current.get(x.mem_id, []) else 0,
         axis=1,
@@ -694,6 +696,13 @@ def core_ml(
         else 0,
         axis=1,
     )
+    condition_prosp = condition_prosp.loc[
+        (condition_prosp["confidence"] >= threshold)
+        | (condition_prosp["known"] == 1)
+        | (condition_prosp["uccc"] == 1),
+        :
+    ]
+    condition_prosp["confidence"] = condition_prosp["confidence"].round(6)
 
     # TODO: engineer this process: optimize implementation; design output
     if get_indicators:
