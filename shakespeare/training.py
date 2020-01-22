@@ -68,8 +68,6 @@ def get_training_set(year, model):
                 mem_date_end=mem_date_end,
                 model=model,
             )
-            sub_codes = pd.DataFrame(sub_codes)
-            sub_codes.columns = ["mem_id", "pra_id", "spec_id", "code"]
             sub_codes = sub_codes.groupby("mem_id")["code"].agg(list)
             sub_codes = sub_codes.apply(lambda x: list(set(x)))
             codes.update(dict(sub_codes))

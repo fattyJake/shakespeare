@@ -75,14 +75,14 @@ def plot_coefficients(
     if "CalibratedClassifierCV" in str(model.__str__):
         if shap_mode:
             explainer = shap.TreeExplainer(
-                model.calibrated_classifiers_c.base_estimator
+                model.calibrated_classifiers_[0].base_estimator
             )
             shap_values = explainer.shap_values(shap_set)
             coefs = np.mean(np.abs(shap_values), axis=0)
         else:
             coefs = [
-                c.feature_importances_
-                for c in model.calibrated_classifiers_.base_estimator
+                c.base_estimator.feature_importances_
+                for c in model.calibrated_classifiers_
             ]
         coefs = np.sum(coefs, axis=0) / model.cv
     else:
