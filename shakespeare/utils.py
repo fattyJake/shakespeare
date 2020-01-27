@@ -273,13 +273,15 @@ def get_indicators(
                     c for c in current_codes if HCC in mappings.get(c, [])
                 ]
                 indices = [current_codes.index(code) for code in mapped_codes]
-                pra_list = itertools.chain(
-                    *[dict_current[mem_id]["pra_id"][i] for i in indices]
-                )
-                condition[(mem_id, HCC)]["top_indicators"] = mapped_codes
-                condition[(mem_id, HCC)]["pra_id"] = list(
-                    unique_keeping_order([pra for pra in pra_list if pra > -1])
-                )
+                pra_list = [dict_current[mem_id]["pra_id"][i] for i in indices]
+                condition[(mem_id, HCC)]["top_indicators"] = [
+                    {
+                        "code_type": c.split('-', 1)[0],
+                        'code': c.split('-', 1)[1],
+                        'pra_id': [pra for pra in p if pra > -1]
+                    }
+                    for c, p in zip(mapped_codes, pra_list)
+                ]
                 continue
 
             # retrospective known mappings or prospective UCCC mappings
@@ -291,13 +293,15 @@ def get_indicators(
                     c for c in prior_codes if HCC in mappings.get(c, [])
                 ]
                 indices = [prior_codes.index(code) for code in mapped_codes]
-                pra_list = itertools.chain(
-                    *[dict_prior[mem_id]["pra_id"][i] for i in indices]
-                )
-                condition[(mem_id, HCC)]["top_indicators"] = mapped_codes
-                condition[(mem_id, HCC)]["pra_id"] = list(
-                    unique_keeping_order([pra for pra in pra_list if pra > -1])
-                )
+                pra_list = [dict_prior[mem_id]["pra_id"][i] for i in indices]
+                condition[(mem_id, HCC)]["top_indicators"] = [
+                    {
+                        "code_type": c.split('-', 1)[0],
+                        'code': c.split('-', 1)[1],
+                        'pra_id': [pra for pra in p if pra > -1]
+                    }
+                    for c, p in zip(mapped_codes, pra_list)
+                ]
                 continue
 
             # suspected SHAP indicators
@@ -324,11 +328,15 @@ def get_indicators(
             )
             indices = [codes.index(code) for code in coef_dict]
 
-            condition[(mem_id, HCC)]["top_indicators"] = list(coef_dict)
-            pra_list = itertools.chain(*[pra_list[i] for i in indices])
-            condition[(mem_id, HCC)]["pra_id"] = list(
-                unique_keeping_order([pra for pra in pra_list if pra > -1])
-            )
+            pra_list = [pra_list[i] for i in indices]
+            condition[(mem_id, HCC)]["top_indicators"] = [
+                {
+                    "code_type": c.split('-', 1)[0],
+                    'code': c.split('-', 1)[1],
+                    'pra_id': [pra for pra in p if pra > -1]
+                }
+                for c, p in zip(list(coef_dict), pra_list)
+            ]
 
         del coef_matrix
         gc.collect()
@@ -506,7 +514,7 @@ def update_code_desc():
     )
     z.close()
 
-    ndc_codes.PRODUCTNDC = ndc_codes.PRODUCTNDC.map(ndc10_to_ndc9)
+    ndc_codes.PRODUCTNDC = ndc_codes.PRODUCTNDC.map(ndc10_to_ndc9_product)
     ndc_codes = (
         ndc_codes
         .groupby('PRODUCTNDC')['NONPROPRIETARYNAME']
@@ -527,12 +535,13 @@ def update_code_desc():
         )
     )
 
+
 def unique_keeping_order(iterable):
     seen = set()
     return [x for x in iterable if not (x in seen or seen.add(x))]
 
 
-def ndc10_to_ndc9(code):
+def ndc10_to_ndc9_product(code):
     labeler, product = code.split('-')
     if len(labeler) == 4 and len(product) == 4:
         return '0' + labeler + product

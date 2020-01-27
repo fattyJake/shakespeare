@@ -1,7 +1,7 @@
 ---
 applications:
 - name: 
-  memory: 4GB
+  memory: 8GB
   instances: 1
   disk_quota: 2GB
   health-check-type: process

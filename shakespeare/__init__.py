@@ -416,22 +416,76 @@ def detect_api(json_body: dict):
         table.append(sub_table)
 
     table = pd.concat(table, axis=0)
+
+    # check code_type
+    unique_code_type = list(table.code_type.unique())
+    non_recognized_code_type = [
+        ct
+        for ct in unique_code_type
+        if ct not in [
+            "ICD9DX",
+            "ICD10DX",
+            "CPT",
+            "HCPCS",
+            "NDC9",
+            "ICD9PX",
+            "ICD10PX",
+            "DRG",
+        ]
+    ]
+
+    # check target year
+    if "target_year" in json_body:
+        no_target_year = False
+        target_year = json_body["target_year"]
+    else:
+        no_target_year = True
+        target_year = datetime.today().year
+
     table["year"] = table["service_date"].str.slice(0, 4)
     table["year"] = table["year"].astype(int)
+    unique_service_years = list(table.year.unique())
+    non_recognized_year = [
+        str(y)
+        for y in unique_service_years
+        if y > target_year
+    ]
+
     table["code"] = table.apply(
         lambda row: f"{row['code_type']}-{row['code']}", axis=1
     )
     table = table[["mem_id", "pra_id", "spec_id", "year", "code"]]
 
-    return core_ml(
+    final_results = core_ml(
         table,
-        target_year=json_body.get("target_year", datetime.today().year),
+        target_year=target_year,
         model=json_body["model_version_ID"],
         auto_update=False,  # TODO: allow auto_update in future?
         threshold=json_body.get("threshold", 0.0),
         get_indicators=json_body.get("get_indicators", True),
         top_n_indicator=json_body.get("top_n_indicator", 5),
     )
+
+    final_results['warnings'] = []
+    if non_recognized_code_type:
+        final_results['warnings'].append(
+            "Detected code types that are not recognized: "
+            + f"{', '.join(non_recognized_code_type)}. The model only accept "
+            + 'code types "ICD9DX", "ICD10DX", "ICD9PX", "ICD10X", "CPT", "HCP'
+            + 'CS", "NDC9" and "DRG". Please check and consider another try.'
+        )
+    if no_target_year:
+        final_results['warnings'].append(
+            "No target year provided, use today's year as target year instead."
+        )
+    if non_recognized_year:
+        final_results['warnings'].append(
+            "There are claims documented in service years that are later then "
+            + f"target year: {', '.join(non_recognized_code_type)}. Please "
+            + "check and consider another try."
+        )
+
+    return final_results
 
 
 def core_ml(
