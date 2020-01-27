@@ -216,7 +216,7 @@ def batch_member_codes(
                 SELECT e.mem_id                         AS mem_id,
                     e.pra_id                            AS pra_id,
                     pra.spec_id                         AS spec_id,
-                    YEAR(mrr_StartDate)                 AS year,
+                    mrr_StartDate                       AS service_date,
                     CASE icdVersionInd
                         WHEN 9 THEN 'ICD9DX' WHEN 10 THEN 'ICD10DX'
                         ELSE 'ICD9DX' END
@@ -259,7 +259,7 @@ def batch_member_codes(
             CREATE TABLE #mrr_temp (mem_id INT,
                 pra_id INT,
                 spec_id INT,
-                year INT,
+                service_date DATE,
                 code_type VARCHAR(50),
                 code VARCHAR(50))
         END"""
@@ -273,7 +273,7 @@ def batch_member_codes(
     SELECT e.mem_id                                           AS mem_id,
         e.pra_id                                              AS pra_id,
         pra.spec_id                                           AS spec_id,
-        YEAR(ISNULL(e.enc_DischargeDate, e.enc_ServiceDate))  AS year,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)        AS service_date,
         CASE icdVersionInd
             WHEN 9 THEN 'ICD9DX' WHEN 10 THEN 'ICD10DX' ELSE 'ICD9DX' END
                                                               AS code_type,
@@ -300,12 +300,12 @@ def batch_member_codes(
         + date_end
         + """'
     UNION
-    SELECT e.mem_id                                             AS mem_id,
-        e.pra_id                                                AS pra_id,
-        pra.spec_id                                             AS spec_id,
-        YEAR(ISNULL(e.enc_DischargeDate, e.enc_ServiceDate))    AS year,
-        'CPT'                                                   AS code_type,
-        eCPT.cpt_Code                                           AS code
+    SELECT e.mem_id                                            AS mem_id,
+        e.pra_id                                               AS pra_id,
+        pra.spec_id                                            AS spec_id,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)         AS service_date,
+        'CPT'                                                  AS code_type,
+        eCPT.cpt_Code                                          AS code
     FROM """
         + payer
         + """.dbo.tbEncounter e WITH(NOLOCK)
@@ -328,12 +328,12 @@ def batch_member_codes(
         + date_end
         + """'
     UNION
-    SELECT e.mem_id                                             AS mem_id,
-        e.pra_id                                                AS pra_id,
-        pra.spec_id                                             AS spec_id,
-        YEAR(ISNULL(e.enc_DischargeDate, e.enc_ServiceDate))    AS year,
-        'DRG'                                                   AS code_type,
-        eDRG.DRG_Code                                           AS code
+    SELECT e.mem_id                                            AS mem_id,
+        e.pra_id                                               AS pra_id,
+        pra.spec_id                                            AS spec_id,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)         AS service_date,
+        'DRG'                                                  AS code_type,
+        eDRG.DRG_Code                                          AS code
     FROM """
         + payer
         + """.dbo.tbEncounter e WITH(NOLOCK)
@@ -356,12 +356,12 @@ def batch_member_codes(
         + date_end
         + """'
     UNION
-    SELECT e.mem_id                                             AS mem_id,
-        e.pra_id                                                AS pra_id,
-        pra.spec_id                                             AS spec_id,
-        YEAR(ISNULL(e.enc_DischargeDate, e.enc_ServiceDate))    AS year,
-        'HCPCS'                                                 AS code_type,
-        eHCPCS.HCPCS_Code                                       AS code
+    SELECT e.mem_id                                            AS mem_id,
+        e.pra_id                                               AS pra_id,
+        pra.spec_id                                            AS spec_id,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)         AS service_date,
+        'HCPCS'                                                AS code_type,
+        eHCPCS.HCPCS_Code                                      AS code
     FROM """
         + payer
         + """.dbo.tbEncounter e WITH(NOLOCK)
@@ -384,14 +384,14 @@ def batch_member_codes(
         + date_end
         + """'
     UNION
-    SELECT e.mem_id                                             AS mem_id,
-        e.pra_id                                                AS pra_id,
-        pra.spec_id                                             AS spec_id,
-        YEAR(ISNULL(e.enc_DischargeDate, e.enc_ServiceDate))    AS year,
+    SELECT e.mem_id                                            AS mem_id,
+        e.pra_id                                               AS pra_id,
+        pra.spec_id                                            AS spec_id,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)         AS service_date,
         CASE icdVersionInd
             WHEN 9 THEN 'ICD9PX' WHEN 10 THEN 'ICD10PX' ELSE 'ICD9PX' END
-                                                                AS code_type,
-        eProc.icd_Code                                          AS code
+                                                               AS code_type,
+        eProc.icd_Code                                         AS code
     FROM """
         + payer
         + """.dbo.tbEncounter e WITH(NOLOCK)
@@ -417,7 +417,7 @@ def batch_member_codes(
     SELECT p.mem_id                                         AS mem_id,
         p.pra_id                                            AS pra_id,
         pra.spec_id                                         AS spec_id,
-        YEAR(pha_ServiceDate)                               AS year,
+        pha_ServiceDate                                     AS service_date,
         'NDC9'                                              AS code_type,
         NDC.ndcl_NDC9Code                                   AS code
     FROM """
@@ -455,7 +455,7 @@ def batch_member_codes(
         SELECT e.mem_id                                        AS mem_id,
             -1                                                 AS pra_id,
             -1                                                 AS spec_id,
-            YEAR(raps_DOSfrom)                                 AS year,
+            raps_DOSfrom                                       AS service_date,
             CASE WHEN raps_ICD10 is NULL THEN 'ICD9DX' else 'ICD10DX' END
                                                                AS code_type,
             ISNULL(UPPER(raps_ICD10), UPPER(raps_ICD9))        AS code
@@ -505,7 +505,7 @@ def batch_member_codes(
     )
     db.close()
 
-    return table[['mem_id', 'pra_id', 'spec_id', 'year', 'code']]
+    return table[['mem_id', 'pra_id', 'spec_id', 'service_year', 'code']]
 
 
 def batch_member_monthly_report(

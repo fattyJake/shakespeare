@@ -66,7 +66,8 @@ def preprocess_table(table, target_year):
     Parameters
     --------
     table : pandas.DataFrame
-        a table with coulumn ['mem_id', 'pra_id', 'spec_id', 'year', 'code']
+        a table with coulumn ['mem_id', 'pra_id', 'spec_id', 'service_date',
+        'code']
         
     target_year : int
         target service year
@@ -85,6 +86,9 @@ def preprocess_table(table, target_year):
         209, 210, 215, 221, 222, 224, 233, 234, 237, -1,
     }
 
+    table['year'] = table.service_date.map(lambda x: x.year)
+    del table['service_date']
+    
     table["pra_id"] = table["pra_id"].fillna(-1)
     table["spec_id"] = table["spec_id"].fillna(-1)
     table = (
