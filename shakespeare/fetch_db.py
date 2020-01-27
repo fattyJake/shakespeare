@@ -505,7 +505,7 @@ def batch_member_codes(
     )
     db.close()
 
-    return table[['mem_id', 'pra_id', 'spec_id', 'service_year', 'code']]
+    return table[['mem_id', 'pra_id', 'spec_id', 'service_date', 'code']]
 
 
 def batch_member_monthly_report(
