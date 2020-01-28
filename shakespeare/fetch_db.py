@@ -153,18 +153,13 @@ def batch_member_codes(
     model_name = get_model_name(model)
 
     if memberID_list:
-        db.execute("CREATE TABLE #MemberList (mem_id INT)")
         db.execute(
-            "\n".join(
-                [
-                    f"INSERT INTO #MemberList VALUES ({str(member)})"
-                    for member in memberID_list
-                ]
-            )
+            "BEGIN TRY DROP TABLE #MemberList END TRY BEGIN CATCH END CATCH"
         )
-        while db.cursor().nextset():
-            pass
-        db.cursor().commit()
+        db.execute("CREATE TABLE #MemberList (mem_id INT)")
+        for member in memberID_list:
+            db.cursor().execute("INSERT INTO #MemberList VALUES (?)", member)
+            db.commit()
 
     sql = (
         """
@@ -190,9 +185,6 @@ def batch_member_codes(
         )
     sql = re.sub(r"WHERE dateInserted BETWEEN 'None' AND 'None'", "", sql)
     db.execute(sql)
-    while db.cursor().nextset():
-        pass
-    db.cursor().commit()
 
     if not just_claims:
         mrr_queue_sql = (
