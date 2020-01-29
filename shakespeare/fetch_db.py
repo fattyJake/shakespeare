@@ -237,7 +237,7 @@ def batch_member_codes(
             END"""
         )
         sql = re.sub(
-            r"WHERE [ep]\.[a-zA-Z_]+ BETWEEN 'None' AND 'None'", "", sql
+            r"WHERE [epl]\.[a-zA-Z_]+ BETWEEN 'None' AND 'None'", "", sql
         )
 
         db.execute(sql)
@@ -433,6 +433,34 @@ def batch_member_codes(
         + """' AND '"""
         + date_end
         + """'
+    UNION
+    SELECT l.mem_id                                         AS mem_id,
+        l.pra_id                                            AS pra_id,
+        pra.spec_id                                         AS spec_id,
+        l.lab_ServiceDate                                   AS service_date,
+        'LOINC'                                             AS code_type,
+        LOINC.loinc_Code                                    AS code
+    FROM """
+        + payer
+        + """.dbo.tbLab l WITH(NOLOCK)
+                    INNER JOIN """
+        + payer
+        + """.dbo.tbLabLOINCCPT LOINC ON l.lab_id = LOINC.lab_id
+            INNER JOIN #Temp tp ON tp.mem_id = l.mem_id
+            LEFT JOIN """
+        + payer
+        + """.dbo.tbPractitioner pra ON pra.pra_id = l.pra_id
+            INNER JOIN """
+        + payer
+        + """.dbo.tbFile f WITH(NOLOCK)
+            ON f.fil_id = l.fil_id AND f.fil_StartDate <= '"""
+        + file_date_lmt
+        + """'
+    WHERE l.lab_ServiceDate BETWEEN '"""
+        + date_start
+        + """' AND '"""
+        + date_end
+        + """'
     """
     )
 
@@ -474,7 +502,7 @@ def batch_member_codes(
         """
         )
     sql = re.sub(
-        r"WHERE [ep]\.[a-zA-Z_]+ BETWEEN 'None' AND 'None'", "", sql
+        r"WHERE [epl]\.[a-zA-Z_]+ BETWEEN 'None' AND 'None'", "", sql
     )
     sql = re.sub(
         r"WHERE ISNULL\(e\.enc_DischargeDate, e\.enc_ServiceDate\) BETWEEN "
@@ -485,7 +513,7 @@ def batch_member_codes(
     sql = re.sub(
         r"INNER JOIN "
         + payer
-        + r"\.dbo\.tbFile f WITH\(NOLOCK\)\s+ON f\.fil_id = [ep]\.fil_id AND "
+        + r"\.dbo\.tbFile f WITH\(NOLOCK\)\s+ON f\.fil_id = [epl]\.fil_id AND "
         + r"f\.fil_StartDate <= 'None'",
         "",
         sql,
