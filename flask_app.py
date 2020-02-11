@@ -146,6 +146,7 @@ def detect():
 
         final_results = {
             "Request Status": "Success",
+            "correlation_id": correlation_id,
             "target_year": content.get("target_year", "Not Provided"),
             "model_version_ID": model_version_ID,
         }
@@ -156,6 +157,7 @@ def detect():
         tb = traceback.format_exc().split("\n")
         error_response = {
             "Request Status": "Failed",
+            "correlation_id": correlation_id,
             "Error": e.__class__.__name__,
             "Error Message": str(e),
             "stack_trace": "\n".join(tb),
