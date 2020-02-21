@@ -121,7 +121,7 @@ def batch_member_codes(
 
     Return
     --------
-    List of tuples (mem_id, pra_id, spec_id, Code)
+    List of tuples (mem_id, provider_id, spec_id, Code)
 
     Examples
     --------
@@ -206,7 +206,7 @@ def batch_member_codes(
             + """.dbo.MRRData') IS NOT NULL
             BEGIN
                 SELECT e.mem_id                         AS mem_id,
-                    e.pra_id                            AS pra_id,
+                    e.pra_id                            AS provider_id,
                     pra.spec_id                         AS spec_id,
                     mrr_StartDate                       AS service_date,
                     CASE icdVersionInd
@@ -249,7 +249,7 @@ def batch_member_codes(
         IF OBJECT_ID('tempdb..#mrr_temp') IS NULL
         BEGIN
             CREATE TABLE #mrr_temp (mem_id INT,
-                pra_id INT,
+                provider_id INT,
                 spec_id INT,
                 service_date DATE,
                 code_type VARCHAR(50),
@@ -263,7 +263,7 @@ def batch_member_codes(
     sql = (
         """
     SELECT e.mem_id                                           AS mem_id,
-        e.pra_id                                              AS pra_id,
+        e.pra_id                                              AS provider_id,
         pra.spec_id                                           AS spec_id,
         ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)        AS service_date,
         CASE icdVersionInd
@@ -293,7 +293,7 @@ def batch_member_codes(
         + """'
     UNION
     SELECT e.mem_id                                            AS mem_id,
-        e.pra_id                                               AS pra_id,
+        e.pra_id                                               AS provider_id,
         pra.spec_id                                            AS spec_id,
         ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)         AS service_date,
         'CPT'                                                  AS code_type,
@@ -321,7 +321,7 @@ def batch_member_codes(
         + """'
     UNION
     SELECT e.mem_id                                            AS mem_id,
-        e.pra_id                                               AS pra_id,
+        e.pra_id                                               AS provider_id,
         pra.spec_id                                            AS spec_id,
         ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)         AS service_date,
         'DRG'                                                  AS code_type,
@@ -349,7 +349,7 @@ def batch_member_codes(
         + """'
     UNION
     SELECT e.mem_id                                            AS mem_id,
-        e.pra_id                                               AS pra_id,
+        e.pra_id                                               AS provider_id,
         pra.spec_id                                            AS spec_id,
         ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)         AS service_date,
         'HCPCS'                                                AS code_type,
@@ -377,7 +377,7 @@ def batch_member_codes(
         + """'
     UNION
     SELECT e.mem_id                                            AS mem_id,
-        e.pra_id                                               AS pra_id,
+        e.pra_id                                               AS provider_id,
         pra.spec_id                                            AS spec_id,
         ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)         AS service_date,
         CASE icdVersionInd
@@ -407,7 +407,7 @@ def batch_member_codes(
         + """'
     UNION
     SELECT p.mem_id                                         AS mem_id,
-        p.pra_id                                            AS pra_id,
+        p.pra_id                                            AS provider_id,
         pra.spec_id                                         AS spec_id,
         pha_ServiceDate                                     AS service_date,
         'NDC9'                                              AS code_type,
@@ -435,7 +435,7 @@ def batch_member_codes(
         + """'
     UNION
     SELECT l.mem_id                                         AS mem_id,
-        l.pra_id                                            AS pra_id,
+        l.pra_id                                            AS provider_id,
         pra.spec_id                                         AS spec_id,
         l.lab_ServiceDate                                   AS service_date,
         'LOINC'                                             AS code_type,
@@ -473,7 +473,7 @@ def batch_member_codes(
         --Bring in diagnoses codes from RAPS Returns
         UNION
         SELECT e.mem_id                                        AS mem_id,
-            -1                                                 AS pra_id,
+            -1                                                 AS provider_id,
             -1                                                 AS spec_id,
             raps_DOSfrom                                       AS service_date,
             CASE WHEN raps_ICD10 is NULL THEN 'ICD9DX' else 'ICD10DX' END
@@ -525,7 +525,7 @@ def batch_member_codes(
     )
     db.close()
 
-    return table[['mem_id', 'pra_id', 'spec_id', 'service_date', 'code']]
+    return table[['mem_id', 'provider_id', 'spec_id', 'service_date', 'code']]
 
 
 def batch_member_monthly_report(

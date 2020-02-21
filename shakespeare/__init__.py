@@ -51,7 +51,6 @@ def detect_internal(
     model: int = 63,
     auto_update: bool = False,
     threshold: float = 0,
-    get_indicators: bool = False,
     top_n_indicator: int = 5,
 ):
     """
@@ -97,12 +96,9 @@ def detect_internal(
     threshold : float, optional (default: 0)
         a float between 0 and 1 for filtering output confidence above it
         
-    get_indicators : boolean, optional (default: False)
-        if False, only return probabilities for each HCC each member; if True,
-        add supporting evidences of each member to each HCC
-        
     top_n_indicator : int, optional (default: 5)
-        how many indicators to output for each member each HCC
+        how many indicators to output for each member each HCC. If 0, it won't
+        return any supporting evidences
     
     Return
     --------
@@ -113,11 +109,11 @@ def detect_internal(
                 'mem_id': int,
                 'gaps': [
                     {
-                        'hcc': str,
+                        'condition_category': str,
                         'confidence': float,
                         'known': bool,
                         *['top_indicators': list,]
-                        *['pra_id': list]
+                        *['provider_id': list]
                     }
                 ]
             }
@@ -127,12 +123,12 @@ def detect_internal(
                 'mem_id': int,
                 'gaps': [
                     {
-                        'hcc': str,
+                        'condition_category': str,
                         'confidence': float,
                         'known': bool,
                         'uccc': bool,
                         *['top_indicators': list,]
-                        *['pra_id': list]
+                        *['provider_id': list]
                     }
                 ]
             }
@@ -149,7 +145,6 @@ def detect_internal(
             date_end='2019-04-15',
             threshold=0.9,
             top_n_indicator=5,
-            get_indicators=True
         )
 
         {
@@ -158,7 +153,7 @@ def detect_internal(
                     "mem_id": 23023,
                     "gaps": [
                         {
-                            "hcc": "HCC188",
+                            "condition_category": "HCC188",
                             "confidence": 0.990729,
                             "known": 1,
                             "top_indicators": [
@@ -166,7 +161,7 @@ def detect_internal(
                                 "ICD10DX-K9429",
                                 "ICD10DX-Z931"
                             ],
-                            "pra_id": [
+                            "provider_id": [
                                 505,
                                 131157
                             ]
@@ -181,7 +176,7 @@ def detect_internal(
                     "mem_id": 23023,
                     "gaps": [
                         {
-                            "hcc": "HCC188",
+                            "condition_category": "HCC188",
                             "confidence": 0.98871,
                             "known": 0,
                             "uccc": 1,
@@ -190,7 +185,7 @@ def detect_internal(
                                 "ICD10DX-K9429",
                                 "ICD10DX-Z931"
                             ],
-                            "pra_id": [
+                            "provider_id": [
                                 505,
                                 131157
                             ]
@@ -256,20 +251,14 @@ def detect_internal(
         if table.shape[0] == 0:
             return []
         return core_ml(
-            table,
-            year,
-            model,
-            auto_update,
-            threshold,
-            get_indicators,
-            top_n_indicator,
+            table, year, model, auto_update, threshold, top_n_indicator
         )
     else:
         memberID_list = [
             memberID_list[i : i + 40000]
             for i in range(0, len(memberID_list), 40000)
         ]
-        
+
         results = {"retrospective": [], "prospective": []}
         print(f"Total batches: {len(memberID_list)}")
         for batch, sub_mem in enumerate(memberID_list):
@@ -292,16 +281,10 @@ def detect_internal(
             if table.shape[0] == 0:
                 continue
             sub_results = core_ml(
-                table,
-                year,
-                model,
-                auto_update,
-                threshold,
-                get_indicators,
-                top_n_indicator,
+                table, year, model, auto_update, threshold, top_n_indicator
             )
-            results['retrospective'].extend(sub_results['retrospective'])
-            results['prospective'].extend(sub_results['prospective'])
+            results["retrospective"].extend(sub_results["retrospective"])
+            results["prospective"].extend(sub_results["prospective"])
 
             del table
             gc.collect()
@@ -327,11 +310,11 @@ def detect_api(json_body: dict):
                 'mem_id': int,
                 'gaps': [
                     {
-                        'hcc': str,
+                        'condition_category': str,
                         'confidence': float,
                         'known': bool,
                         *['top_indicators': list,]
-                        *['pra_id': list]
+                        *['provider_id': list]
                     }
                 ]
             }
@@ -341,12 +324,12 @@ def detect_api(json_body: dict):
                 'mem_id': int,
                 'gaps': [
                     {
-                        'hcc': str,
+                        'condition_category': str,
                         'confidence': float,
                         'known': bool,
                         'uccc': bool,
                         *['top_indicators': list,]
-                        *['pra_id': list]
+                        *['provider_id': list]
                     }
                 ]
             }
@@ -364,7 +347,7 @@ def detect_api(json_body: dict):
                     "mem_id": 23023,
                     "gaps": [
                         {
-                            "hcc": "HCC188",
+                            "condition_category": "HCC188",
                             "confidence": 0.990729,
                             "known": 1,
                             "top_indicators": [
@@ -372,7 +355,7 @@ def detect_api(json_body: dict):
                                 "ICD10DX-K9429",
                                 "ICD10DX-Z931"
                             ],
-                            "pra_id": [
+                            "provider_id": [
                                 505,
                                 131157
                             ]
@@ -387,7 +370,7 @@ def detect_api(json_body: dict):
                     "mem_id": 23023,
                     "gaps": [
                         {
-                            "hcc": "HCC188",
+                            "condition_category": "HCC188",
                             "confidence": 0.98871,
                             "known": 0,
                             "uccc": 1,
@@ -396,7 +379,7 @@ def detect_api(json_body: dict):
                                 "ICD10DX-K9429",
                                 "ICD10DX-Z931"
                             ],
-                            "pra_id": [
+                            "provider_id": [
                                 505,
                                 131157
                             ]
@@ -422,7 +405,8 @@ def detect_api(json_body: dict):
     non_recognized_code_type = [
         ct
         for ct in unique_code_type
-        if ct not in [
+        if ct
+        not in [
             "ICD9DX",
             "ICD10DX",
             "CPT",
@@ -446,15 +430,13 @@ def detect_api(json_body: dict):
     table["year"] = table["year"].astype(int)
     unique_service_years = list(table.year.unique())
     non_recognized_year = [
-        str(y)
-        for y in unique_service_years
-        if y > target_year
+        str(y) for y in unique_service_years if y > target_year
     ]
 
     table["code"] = table.apply(
         lambda row: f"{row['code_type']}-{row['code']}", axis=1
     )
-    table = table[["mem_id", "pra_id", "spec_id", "year", "code"]]
+    table = table[["mem_id", "provider_id", "spec_id", "year", "code"]]
 
     final_results = core_ml(
         table,
@@ -462,24 +444,23 @@ def detect_api(json_body: dict):
         model=json_body["model_version_ID"],
         auto_update=False,  # TODO: allow auto_update in future?
         threshold=json_body.get("threshold", 0.0),
-        get_indicators=json_body.get("get_indicators", True),
         top_n_indicator=json_body.get("top_n_indicator", 5),
     )
 
-    final_results['warnings'] = []
+    final_results["warnings"] = []
     if non_recognized_code_type:
-        final_results['warnings'].append(
+        final_results["warnings"].append(
             "Detected code types that are not recognized: "
             + f"{', '.join(non_recognized_code_type)}. The model only accept "
             + 'code types "ICD9DX", "ICD10DX", "ICD9PX", "ICD10X", "CPT", "HCP'
             + 'CS", "NDC9" and "DRG". Please check and consider another try.'
         )
     if no_target_year:
-        final_results['warnings'].append(
+        final_results["warnings"].append(
             "No target year provided, use today's year as target year instead."
         )
     if non_recognized_year:
-        final_results['warnings'].append(
+        final_results["warnings"].append(
             "There are claims documented in service years that are later then "
             + f"target year: {', '.join(non_recognized_code_type)}. Please "
             + "check and consider another try."
@@ -494,7 +475,6 @@ def core_ml(
     model: int = 63,
     auto_update: bool = False,
     threshold: float = 0,
-    get_indicators: bool = False,
     top_n_indicator: int = 5,
 ):
     """
@@ -503,7 +483,7 @@ def core_ml(
     Parameters
     --------
     table : pandas.DataFrame
-        a table with coulumn ['mem_id', 'pra_id', 'spec_id', 'year', 'code']
+        a table with coulumn ['mem_id', 'provider_id', 'spec_id', 'year', 'code']
     
     target_year : int
         target service year
@@ -520,12 +500,9 @@ def core_ml(
     threshold : float, optional (default: 0)
         a float between 0 and 1 for filtering output confidence above it
         
-    get_indicators : boolean, optional (default: False)
-        if False, only return probabilities for each HCC each member; if True,
-        add supporting evidences of each member to each HCC
-        
     top_n_indicator : int, optional (default: 5)
-        how many indicators to output for each member each HCC
+        how many indicators to output for each member each HCC; If 0, it won't
+        return any supporting evidences
     
     Return
     --------
@@ -536,11 +513,11 @@ def core_ml(
                 'mem_id': int,
                 'gaps': [
                     {
-                        'hcc': str,
+                        'condition_category': str,
                         'confidence': float,
                         'known': bool,
                         *['top_indicators': list,]
-                        *['pra_id': list]
+                        *['provider_id': list]
                     }
                 ]
             }
@@ -550,12 +527,12 @@ def core_ml(
                 'mem_id': int,
                 'gaps': [
                     {
-                        'hcc': str,
+                        'condition_category': str,
                         'confidence': float,
                         'known': bool,
                         'uccc': bool,
                         *['top_indicators': list,]
-                        *['pra_id': list]
+                        *['provider_id': list]
                     }
                 ]
             }
@@ -570,7 +547,6 @@ def core_ml(
             2019,
             threshold=0.9,
             top_n_indicator=5,
-            get_indicators=True
         )
         
         {
@@ -579,7 +555,7 @@ def core_ml(
                     "mem_id": 23023,
                     "gaps": [
                         {
-                            "hcc": "HCC188",
+                            "condition_category": "HCC188",
                             "confidence": 0.990729,
                             "known": 1,
                             "top_indicators": [
@@ -587,7 +563,7 @@ def core_ml(
                                 "ICD10DX-K9429",
                                 "ICD10DX-Z931"
                             ],
-                            "pra_id": [
+                            "provider_id": [
                                 505,
                                 131157
                             ]
@@ -602,7 +578,7 @@ def core_ml(
                     "mem_id": 23023,
                     "gaps": [
                         {
-                            "hcc": "HCC188",
+                            "condition_category": "HCC188",
                             "confidence": 0.98871,
                             "known": 0,
                             "uccc": 1,
@@ -611,7 +587,7 @@ def core_ml(
                                 "ICD10DX-K9429",
                                 "ICD10DX-Z931"
                             ],
-                            "pra_id": [
+                            "provider_id": [
                                 505,
                                 131157
                             ]
@@ -704,7 +680,7 @@ def core_ml(
         vstack(
             [
                 utils.build_member_input_vector(
-                    dict_prior.get(mem_id, {'code': []})['code'], variables
+                    dict_prior.get(mem_id, {"code": []})["code"], variables
                 )
                 for mem_id in MEMBER_LIST
             ]
@@ -714,8 +690,8 @@ def core_ml(
         vstack(
             [
                 utils.build_member_input_vector(
-                    dict_prior.get(mem_id, {'code': []})['code']
-                    + dict_current.get(mem_id, {'code': []})['code'],
+                    dict_prior.get(mem_id, {"code": []})["code"]
+                    + dict_current.get(mem_id, {"code": []})["code"],
                     variables,
                 )
                 for mem_id in MEMBER_LIST
@@ -727,26 +703,30 @@ def core_ml(
     print("Running ML for retrospective analysis...")
     condition_retro = utils.run_ml(ensemble, MEMBER_LIST, vector_prior)
     condition_retro["known"] = condition_retro.apply(
-        lambda x: 1 if x.hcc in member_known_prior.get(x.mem_id, []) else 0,
+        lambda x: 1
+        if x.condition_category in member_known_prior.get(x.mem_id, [])
+        else 0,
         axis=1,
     )
     condition_retro = condition_retro.loc[
         (condition_retro["confidence"] >= threshold)
         | (condition_retro["known"] == 1),
-        :
+        :,
     ]
     condition_retro["confidence"] = condition_retro["confidence"].round(6)
 
     print("Running ML for prospective anlysis...")
     condition_prosp = utils.run_ml(ensemble, MEMBER_LIST, vector_current)
-    condition_prosp["known"] = condition_prosp.apply(
-        lambda x: 1 if x.hcc in member_known_current.get(x.mem_id, []) else 0,
+    condition_prosp["known_current"] = condition_prosp.apply(
+        lambda x: 1
+        if x.condition_category in member_known_current.get(x.mem_id, [])
+        else 0,
         axis=1,
     )
-    # TODO: come up with better flag system of UCCC for pra_id matching purpose
-    condition_prosp["uccc"] = condition_prosp.apply(
+    # TODO: come up with better flag system of UCCC for provider_id matching purpose
+    condition_prosp["kown_historical"] = condition_prosp.apply(
         lambda x: 1
-        if x.hcc in member_known_prior.get(x.mem_id, []) and x.known == 0
+        if x.condition_category in member_known_prior.get(x.mem_id, [])
         else 0,
         axis=1,
     )
@@ -754,12 +734,12 @@ def core_ml(
         (condition_prosp["confidence"] >= threshold)
         | (condition_prosp["known"] == 1)
         | (condition_prosp["uccc"] == 1),
-        :
+        :,
     ]
     condition_prosp["confidence"] = condition_prosp["confidence"].round(6)
 
     # TODO: engineer this process: optimize implementation; design output
-    if get_indicators:
+    if top_n_indicator > 0:
         print("Finding retrospective indicators...")
         retro_results = utils.get_indicators(
             ensemble=ensemble,
@@ -788,12 +768,12 @@ def core_ml(
 
         final_results = {
             "retrospective": retro_results,
-            "prospective": pros_results
+            "prospective": pros_results,
         }
     else:
         final_results = {
             "retrospective": utils.df_to_json(condition_retro),
-            "prospective": utils.df_to_json(condition_prosp)
+            "prospective": utils.df_to_json(condition_prosp),
         }
 
     print("End  : " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))

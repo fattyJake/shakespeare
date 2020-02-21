@@ -66,7 +66,7 @@ def preprocess_table(table, target_year):
     Parameters
     --------
     table : pandas.DataFrame
-        a table with coulumn ['mem_id', 'pra_id', 'spec_id', 'service_date',
+        a table with coulumn ['mem_id', 'provider_id', 'spec_id', 'service_date',
         'code']
         
     target_year : int
@@ -75,7 +75,7 @@ def preprocess_table(table, target_year):
     Return
     --------
     dict_prior, dict_current
-        {mem_id: {"code": [], "pra_id": []}}
+        {mem_id: {"code": [], "provider_id": []}}
     """
 
     SPECIALISTS = {
@@ -86,53 +86,51 @@ def preprocess_table(table, target_year):
         209, 210, 215, 221, 222, 224, 233, 234, 237, -1,
     }
 
-    table['year'] = table.service_date.map(lambda x: x.year)
-    del table['service_date']
-    
-    table["pra_id"] = table["pra_id"].fillna(-1)
+    table["year"] = table.service_date.map(lambda x: x.year)
+    del table["service_date"]
+
+    table["provider_id"] = table["provider_id"].fillna(-1)
     table["spec_id"] = table["spec_id"].fillna(-1)
     table = (
-        table.groupby(["mem_id", "year", "code"])["pra_id", "spec_id"]
+        table.groupby(["mem_id", "year", "code"])["provider_id", "spec_id"]
         .agg(list)
         .reset_index()
     )
     table["spec_id"] = table["spec_id"].map(
         lambda x: [spec in SPECIALISTS for spec in x]
     )
-    table["pra_id"] = table.apply(
+    table["provider_id"] = table.apply(
         lambda x: [
-            int(pra) for i, pra in enumerate(x["pra_id"]) if x["spec_id"][i]
+            int(pra)
+            for i, pra in enumerate(x["provider_id"])
+            if x["spec_id"][i]
         ],
         axis=1,
     )
     table = (
-        table.groupby(["mem_id", "year"])["code", "pra_id"]
+        table.groupby(["mem_id", "year"])["code", "provider_id"]
         .agg(list)
         .reset_index()
     )
 
     return (
-        table.loc[table.year < target_year, ["mem_id", "code", "pra_id"]]
+        table.loc[table.year < target_year, ["mem_id", "code", "provider_id"]]
         .set_index("mem_id")
         .to_dict("index"),
-        table.loc[table.year == target_year, ["mem_id", "code", "pra_id"]]
+        table.loc[table.year == target_year, ["mem_id", "code", "provider_id"]]
         .set_index("mem_id")
         .to_dict("index"),
     )
 
 
-def run_ml(
-    ensemble: dict,
-    MEMBER_LIST: list,
-    vector: csr_matrix,
-):
+def run_ml(ensemble: dict, MEMBER_LIST: list, vector: csr_matrix):
     """
     ML process and post-processing
 
     Parameters
     --------
     ensemble : dict
-        ML HCC classifier dict
+        ML condition_category classifier dict
         
     MEMBER_LIST : list
         fized order of member ID list
@@ -143,7 +141,7 @@ def run_ml(
     Return
     --------
     df_condition : pd.DataFrame
-        table with column ['mem_id', 'hcc', 'confidence', 'known' *[,'uccc']]
+        table with column ['mem_id', 'condition_category', 'confidence', 'known' *[,'uccc']]
     """
 
     df_condition = {"mem_id": MEMBER_LIST}
@@ -156,9 +154,9 @@ def run_ml(
     df_condition = pd.melt(
         df_condition,
         id_vars=["mem_id"],
-        value_vars=[i for i in df_condition.columns if i.startswith("HCC")],
+        value_vars=list(set(df_condition.columns) & set(ensemble.keys())),
     )
-    df_condition.columns = ["mem_id", "hcc", "confidence"]
+    df_condition.columns = ["mem_id", "condition_category", "confidence"]
     df_condition["confidence"] = df_condition["confidence"].map(
         lambda x: np.tanh(np.power(x, 1 / 2) * 4)
         if x < 0.012091892
@@ -192,7 +190,7 @@ def get_indicators(
         fized order of member ID list
     
     condition : pandas.DataFrame
-        table with column ['mem_id', 'hcc', 'confidence', 'known' *[,'uccc']]
+        table with column ['mem_id', 'condition_category', 'confidence', 'known' *[,'uccc']]
     
     vector : scipy.sparse.csr_matrix
         ML input sparse matrix
@@ -220,12 +218,12 @@ def get_indicators(
                 'mem_id': int,
                 'gaps': [
                     {
-                        'hcc': str,
+                        'condition_category': str,
                         'confidence': float,
                         'known': bool,
                         *['uccc': bool,]
                         'top_indicators': list,
-                        'pra_id': list
+                        'provider_id': list
                     }
                 ]
             }
@@ -249,7 +247,7 @@ def get_indicators(
         del explainer
         gc.collect()
 
-    condition = condition.set_index(["mem_id", "hcc"]).to_dict("index")
+    condition = condition.set_index(["mem_id", "condition_category"]).to_dict("index")
 
     for HCC in ensemble.keys():
         if ensemble[HCC]["classifier"] is None:
@@ -268,21 +266,23 @@ def get_indicators(
             if not prior_codes:
                 continue
 
-            # prospective known mappings
+            # prospective known_current mappings
             if (
-                "uccc" in condition[(mem_id, HCC)]
-                and condition[(mem_id, HCC)]["known"] == 1
+                "known_current" in condition[(mem_id, HCC)]
+                and condition[(mem_id, HCC)]["known_current"] == 1
             ):
                 mapped_codes = [
                     c for c in current_codes if HCC in mappings.get(c, [])
                 ]
                 indices = [current_codes.index(code) for code in mapped_codes]
-                pra_list = [dict_current[mem_id]["pra_id"][i] for i in indices]
+                pra_list = [
+                    dict_current[mem_id]["provider_id"][i] for i in indices
+                ]
                 condition[(mem_id, HCC)]["top_indicators"] = [
                     {
-                        "code_type": c.split('-', 1)[0],
-                        'code': c.split('-', 1)[1],
-                        'pra_id': [pra for pra in p if pra > -1]
+                        "code_type": c.split("-", 1)[0],
+                        "code": c.split("-", 1)[1],
+                        "provider_id": [pra for pra in p if pra > -1],
                     }
                     for c, p in zip(mapped_codes, pra_list)
                 ]
@@ -290,34 +290,39 @@ def get_indicators(
 
             # retrospective known mappings or prospective UCCC mappings
             if (
-                condition[(mem_id, HCC)].get("uccc", 0) == 1
+                condition[(mem_id, HCC)].get("kown_historical", 0) == 1
                 or condition[(mem_id, HCC)]["known"] == 1
             ):
                 mapped_codes = [
                     c for c in prior_codes if HCC in mappings.get(c, [])
                 ]
                 indices = [prior_codes.index(code) for code in mapped_codes]
-                pra_list = [dict_prior[mem_id]["pra_id"][i] for i in indices]
+                pra_list = [
+                    dict_prior[mem_id]["provider_id"][i] for i in indices
+                ]
                 condition[(mem_id, HCC)]["top_indicators"] = [
                     {
-                        "code_type": c.split('-', 1)[0],
-                        'code': c.split('-', 1)[1],
-                        'pra_id': [pra for pra in p if pra > -1]
+                        "code_type": c.split("-", 1)[0],
+                        "code": c.split("-", 1)[1],
+                        "provider_id": [pra for pra in p if pra > -1],
                     }
                     for c, p in zip(mapped_codes, pra_list)
                 ]
                 continue
 
+            # TODO: UCCC to historical
             # suspected SHAP indicators
             if "uccc" in condition[(mem_id, HCC)]:
                 codes = current_codes + prior_codes
                 pra_list = (
-                    dict_current.get(mem_id, {"pra_id": []})["pra_id"]
-                    + dict_prior[mem_id]["pra_id"]
+                    dict_current.get(mem_id, {"provider_id": []})[
+                        "provider_id"
+                    ]
+                    + dict_prior[mem_id]["provider_id"]
                 )
             else:
                 codes = prior_codes
-                pra_list = dict_prior[mem_id]["pra_id"]
+                pra_list = dict_prior[mem_id]["provider_id"]
             i = list(np.where(coef_matrix[idx] > 0)[0])
             coef_dict = dict(
                 zip(
@@ -335,25 +340,25 @@ def get_indicators(
             pra_list = [pra_list[i] for i in indices]
             condition[(mem_id, HCC)]["top_indicators"] = [
                 {
-                    "code_type": c.split('-', 1)[0],
-                    'code': c.split('-', 1)[1],
-                    'pra_id': [pra for pra in p if pra > -1]
+                    "code_type": c.split("-", 1)[0],
+                    "code": c.split("-", 1)[1],
+                    "provider_id": [pra for pra in p if pra > -1],
                 }
                 for c, p in zip(list(coef_dict), pra_list)
             ]
 
         del coef_matrix
         gc.collect()
-    
+
     condition = [
-        {"mem_id": mh_tuple[0], "gaps": {**{"hcc": mh_tuple[1]}, **d}}
+        {"mem_id": mh_tuple[0], "gaps": {**{"condition_category": mh_tuple[1]}, **d}}
         for mh_tuple, d in condition.items()
     ]
-    condition = sorted(condition, key=operator.itemgetter('mem_id'))
+    condition = sorted(condition, key=operator.itemgetter("mem_id"))
     condition = [
         {"mem_id": key, "gaps": [d["gaps"] for d in list(group)]}
         for key, group in itertools.groupby(
-            condition, key=lambda x: x['mem_id']
+            condition, key=lambda x: x["mem_id"]
         )
     ]
 
@@ -361,14 +366,14 @@ def get_indicators(
 
 
 def df_to_json(condition):
-    condition = condition.groupby('mem_id').agg(list).to_dict('index')
+    condition = condition.groupby("mem_id").agg(list).to_dict("index")
     condition = [
         {
             "mem_id": mem_id,
             "gaps": [
                 {k: i[j] for j, k in enumerate(d.keys())}
                 for i in zip(*list(d.values()))
-            ]
+            ],
         }
         for mem_id, d in condition.items()
     ]
@@ -414,11 +419,11 @@ def update_code_desc():
     """
     cpt_codes = (
         pd.read_sql_query(sql, db)
-        .groupby('CPTCode')['MediumDescription']
+        .groupby("CPTCode")["MediumDescription"]
         .first()
         .to_dict()
     )
-    code_desc.update({'CPT-'+c: d for c, d in cpt_codes.items()})
+    code_desc.update({"CPT-" + c: d for c, d in cpt_codes.items()})
 
     # DRG
     sql = """
@@ -431,11 +436,11 @@ def update_code_desc():
     """
     drg_codes = (
         pd.read_sql_query(sql, db)
-        .groupby('DRGCode')['Description']
+        .groupby("DRGCode")["Description"]
         .first()
         .to_dict()
     )
-    code_desc.update({'DRG-'+c: d for c, d in drg_codes.items()})
+    code_desc.update({"DRG-" + c: d for c, d in drg_codes.items()})
 
     # HCPCS
     sql = """
@@ -445,11 +450,11 @@ def update_code_desc():
     """
     hcpcs_codes = (
         pd.read_sql_query(sql, db)
-        .groupby('HCPCSCode')['ShortDescription']
+        .groupby("HCPCSCode")["ShortDescription"]
         .first()
         .to_dict()
     )
-    code_desc.update({'HCPCS-'+c: d for c, d in hcpcs_codes.items()})
+    code_desc.update({"HCPCS-" + c: d for c, d in hcpcs_codes.items()})
 
     # ICD9DX
     sql = """
@@ -460,11 +465,11 @@ def update_code_desc():
     """
     icd9dx_codes = (
         pd.read_sql_query(sql, db)
-        .groupby('ICD9Code')['ShortDescription']
+        .groupby("ICD9Code")["ShortDescription"]
         .first()
         .to_dict()
     )
-    code_desc.update({'ICD9DX-'+c: d for c, d in icd9dx_codes.items()})
+    code_desc.update({"ICD9DX-" + c: d for c, d in icd9dx_codes.items()})
 
     # ICD9PX
     sql = """
@@ -475,11 +480,11 @@ def update_code_desc():
     """
     icd9px_codes = (
         pd.read_sql_query(sql, db)
-        .groupby('ICD9Code')['ShortDescription']
+        .groupby("ICD9Code")["ShortDescription"]
         .first()
         .to_dict()
     )
-    code_desc.update({'ICD9PX-'+c: d for c, d in icd9px_codes.items()})
+    code_desc.update({"ICD9PX-" + c: d for c, d in icd9px_codes.items()})
 
     # ICD10DX
     sql = """
@@ -489,11 +494,11 @@ def update_code_desc():
     """
     icd10dx_codes = (
         pd.read_sql_query(sql, db)
-        .groupby('ICD10DiagnosisCode')['ShortDescription']
+        .groupby("ICD10DiagnosisCode")["ShortDescription"]
         .first()
         .to_dict()
     )
-    code_desc.update({'ICD10DX-'+c: d for c, d in icd10dx_codes.items()})
+    code_desc.update({"ICD10DX-" + c: d for c, d in icd10dx_codes.items()})
 
     # ICD10PX
     sql = """
@@ -503,29 +508,26 @@ def update_code_desc():
     """
     icd10px_codes = (
         pd.read_sql_query(sql, db)
-        .groupby('ICD10ProcedureCode')['ShortDescription']
+        .groupby("ICD10ProcedureCode")["ShortDescription"]
         .first()
         .to_dict()
     )
-    code_desc.update({'ICD10PX-'+c: d for c, d in icd10px_codes.items()})
+    code_desc.update({"ICD10PX-" + c: d for c, d in icd10px_codes.items()})
 
     # NDC9
     response = requests.get("https://www.accessdata.fda.gov/cder/ndctext.zip")
     z = zipfile.ZipFile(io.BytesIO(response.content))
     z.extractall()
     ndc_codes = pd.read_csv(
-        z.open('product.txt'), sep='\t', header=0, encoding="ISO-8859-1"
+        z.open("product.txt"), sep="\t", header=0, encoding="ISO-8859-1"
     )
     z.close()
 
     ndc_codes.PRODUCTNDC = ndc_codes.PRODUCTNDC.map(ndc10_to_ndc9_product)
     ndc_codes = (
-        ndc_codes
-        .groupby('PRODUCTNDC')['NONPROPRIETARYNAME']
-        .first()
-        .to_dict()
+        ndc_codes.groupby("PRODUCTNDC")["NONPROPRIETARYNAME"].first().to_dict()
     )
-    code_desc.update({'NDC9-' + c: d for c, d in ndc_codes.items()})
+    code_desc.update({"NDC9-" + c: d for c, d in ndc_codes.items()})
 
     pickle.dump(
         code_desc,
@@ -536,7 +538,7 @@ def update_code_desc():
                 r"codes",
             ),
             "wb",
-        )
+        ),
     )
 
 
@@ -546,11 +548,11 @@ def unique_keeping_order(iterable):
 
 
 def ndc10_to_ndc9_product(code):
-    labeler, product = code.split('-')
+    labeler, product = code.split("-")
     if len(labeler) == 4 and len(product) == 4:
-        return '0' + labeler + product
+        return "0" + labeler + product
     elif len(labeler) == 5 and len(product) == 3:
-        return labeler + '0' + product
+        return labeler + "0" + product
     elif len(labeler) == 5 and len(product) == 4:
         return labeler + product
     else:
