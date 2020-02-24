@@ -310,9 +310,8 @@ def get_indicators(
                 ]
                 continue
 
-            # TODO: UCCC to historical
             # suspected SHAP indicators
-            if "uccc" in condition[(mem_id, HCC)]:
+            if "kown_historical" in condition[(mem_id, HCC)]:
                 codes = current_codes + prior_codes
                 pra_list = (
                     dict_current.get(mem_id, {"provider_id": []})[

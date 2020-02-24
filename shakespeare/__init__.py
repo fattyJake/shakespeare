@@ -723,7 +723,6 @@ def core_ml(
         else 0,
         axis=1,
     )
-    # TODO: come up with better flag system of UCCC for provider_id matching purpose
     condition_prosp["kown_historical"] = condition_prosp.apply(
         lambda x: 1
         if x.condition_category in member_known_prior.get(x.mem_id, [])
@@ -732,8 +731,8 @@ def core_ml(
     )
     condition_prosp = condition_prosp.loc[
         (condition_prosp["confidence"] >= threshold)
-        | (condition_prosp["known"] == 1)
-        | (condition_prosp["uccc"] == 1),
+        | (condition_prosp["known_current"] == 1)
+        | (condition_prosp["kown_historical"] == 1),
         :,
     ]
     condition_prosp["confidence"] = condition_prosp["confidence"].round(6)
