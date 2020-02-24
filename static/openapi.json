@@ -252,6 +252,7 @@
                     "today_date": "2019-04-15",
                     "target_year": 2019,
                     "model_version_ID": 63,
+                    "mode": "b",
                     "threshold": 0.3,
                     "get_indicators": true,
                     "top_n_indicator": 5,
