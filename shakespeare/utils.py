@@ -86,9 +86,6 @@ def preprocess_table(table, target_year):
         209, 210, 215, 221, 222, 224, 233, 234, 237, -1,
     }
 
-    table["year"] = table.service_date.map(lambda x: x.year)
-    del table["service_date"]
-
     table["provider_id"] = table["provider_id"].fillna(-1)
     table["spec_id"] = table["spec_id"].fillna(-1)
     table = (
@@ -291,7 +288,7 @@ def get_indicators(
             # retrospective known mappings or prospective UCCC mappings
             if (
                 condition[(mem_id, HCC)].get("kown_historical", 0) == 1
-                or condition[(mem_id, HCC)]["known"] == 1
+                or condition[(mem_id, HCC)].get("known", 0) == 1
             ):
                 mapped_codes = [
                     c for c in prior_codes if HCC in mappings.get(c, [])

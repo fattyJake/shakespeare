@@ -27,9 +27,7 @@ import gc
 from datetime import datetime
 
 # data & machine learning libs
-import numpy as np
 import pandas as pd
-import shap
 from scipy.sparse import csr_matrix, vstack
 
 # package libs
@@ -250,6 +248,9 @@ def detect_internal(
 
         if table.shape[0] == 0:
             return []
+
+        table["year"] = table.service_date.map(lambda x: x.year)
+        del table["service_date"]
         return core_ml(
             table, year, model, auto_update, threshold, top_n_indicator
         )
@@ -280,6 +281,9 @@ def detect_internal(
 
             if table.shape[0] == 0:
                 continue
+
+            table["year"] = table.service_date.map(lambda x: x.year)
+            del table["service_date"]
             sub_results = core_ml(
                 table, year, model, auto_update, threshold, top_n_indicator
             )
@@ -442,7 +446,7 @@ def detect_api(json_body: dict):
         table,
         target_year=target_year,
         model=json_body["model_version_ID"],
-        auto_update=False,  # TODO: allow auto_update in future?
+        auto_update=False,
         threshold=json_body.get("threshold", 0.0),
         top_n_indicator=json_body.get("top_n_indicator", 5),
     )
@@ -473,6 +477,7 @@ def core_ml(
     table: pd.DataFrame,
     target_year: int,
     model: int = 63,
+    mode: str = 'b',
     auto_update: bool = False,
     threshold: float = 0,
     top_n_indicator: int = 5,
@@ -492,6 +497,10 @@ def core_ml(
         an integer of model version ID in
         MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only
         support 'CDPS', 'CMS' and 'HHS'
+    
+    mode : str
+        one of 'r' for retrospective only, 'p' for prospective only and 'b' for
+        both.
         
     auto_update : boolean, optional (default: False)
         if True, and no matching model pickled, it will call `update` function
@@ -601,6 +610,11 @@ def core_ml(
     """
     print("Start: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
+    assert mode in ['r', 'p', 'b'], (
+        'ValueError: "mode" can only be one of "r", "p" or "b", '
+        f'got {mode} instead.'
+    )
+
     if not os.path.exists(
         os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
@@ -665,105 +679,112 @@ def core_ml(
         )
         for mem_id, record in dict_prior.items()
     }
-    member_known_current = {
-        mem_id: set(
-            itertools.chain(
-                *[mappings.get(code, []) for code in record["code"]]
+    if mode in ['p', 'b']:
+        member_known_current = {
+            mem_id: set(
+                itertools.chain(
+                    *[mappings.get(code, []) for code in record["code"]]
+                )
             )
-        )
-        for mem_id, record in dict_current.items()
-    }
+            for mem_id, record in dict_current.items()
+        }
 
     # Vectorizing
     print("Vectoring...")
-    vector_prior = csr_matrix(
-        vstack(
-            [
-                utils.build_member_input_vector(
-                    dict_prior.get(mem_id, {"code": []})["code"], variables
-                )
-                for mem_id in MEMBER_LIST
-            ]
+    if mode in ['r', 'b']:
+        vector_prior = csr_matrix(
+            vstack(
+                [
+                    utils.build_member_input_vector(
+                        dict_prior.get(mem_id, {"code": []})["code"], variables
+                    )
+                    for mem_id in MEMBER_LIST
+                ]
+            )
         )
-    )
-    vector_current = csr_matrix(
-        vstack(
-            [
-                utils.build_member_input_vector(
-                    dict_prior.get(mem_id, {"code": []})["code"]
-                    + dict_current.get(mem_id, {"code": []})["code"],
-                    variables,
-                )
-                for mem_id in MEMBER_LIST
-            ]
+    if mode in ['p', 'b']:
+        vector_current = csr_matrix(
+            vstack(
+                [
+                    utils.build_member_input_vector(
+                        dict_prior.get(mem_id, {"code": []})["code"]
+                        + dict_current.get(mem_id, {"code": []})["code"],
+                        variables,
+                    )
+                    for mem_id in MEMBER_LIST
+                ]
+            )
         )
-    )
 
     # running machine learning
-    print("Running ML for retrospective analysis...")
-    condition_retro = utils.run_ml(ensemble, MEMBER_LIST, vector_prior)
-    condition_retro["known"] = condition_retro.apply(
-        lambda x: 1
-        if x.condition_category in member_known_prior.get(x.mem_id, [])
-        else 0,
-        axis=1,
-    )
-    condition_retro = condition_retro.loc[
-        (condition_retro["confidence"] >= threshold)
-        | (condition_retro["known"] == 1),
-        :,
-    ]
-    condition_retro["confidence"] = condition_retro["confidence"].round(6)
+    if mode in ['r', 'b']:
+        print("Running ML for retrospective analysis...")
+        condition_retro = utils.run_ml(ensemble, MEMBER_LIST, vector_prior)
+        condition_retro["known"] = condition_retro.apply(
+            lambda x: 1
+            if x.condition_category in member_known_prior.get(x.mem_id, [])
+            else 0,
+            axis=1,
+        )
+        condition_retro = condition_retro.loc[
+            (condition_retro["confidence"] >= threshold)
+            | (condition_retro["known"] == 1),
+            :,
+        ]
+        condition_retro["confidence"] = condition_retro["confidence"].round(6)
 
-    print("Running ML for prospective anlysis...")
-    condition_prosp = utils.run_ml(ensemble, MEMBER_LIST, vector_current)
-    condition_prosp["known_current"] = condition_prosp.apply(
-        lambda x: 1
-        if x.condition_category in member_known_current.get(x.mem_id, [])
-        else 0,
-        axis=1,
-    )
-    condition_prosp["kown_historical"] = condition_prosp.apply(
-        lambda x: 1
-        if x.condition_category in member_known_prior.get(x.mem_id, [])
-        else 0,
-        axis=1,
-    )
-    condition_prosp = condition_prosp.loc[
-        (condition_prosp["confidence"] >= threshold)
-        | (condition_prosp["known_current"] == 1)
-        | (condition_prosp["kown_historical"] == 1),
-        :,
-    ]
-    condition_prosp["confidence"] = condition_prosp["confidence"].round(6)
+    if mode in ['p', 'b']:
+        print("Running ML for prospective anlysis...")
+        condition_prosp = utils.run_ml(ensemble, MEMBER_LIST, vector_current)
+        condition_prosp["known_current"] = condition_prosp.apply(
+            lambda x: 1
+            if x.condition_category in member_known_current.get(x.mem_id, [])
+            else 0,
+            axis=1,
+        )
+        condition_prosp["kown_historical"] = condition_prosp.apply(
+            lambda x: 1
+            if x.condition_category in member_known_prior.get(x.mem_id, [])
+            else 0,
+            axis=1,
+        )
+        condition_prosp = condition_prosp.loc[
+            (condition_prosp["confidence"] >= threshold)
+            | (condition_prosp["known_current"] == 1)
+            | (condition_prosp["kown_historical"] == 1),
+            :,
+        ]
+        condition_prosp["confidence"] = condition_prosp["confidence"].round(6)
 
     # TODO: engineer this process: optimize implementation; design output
     if top_n_indicator > 0:
-        print("Finding retrospective indicators...")
-        retro_results = utils.get_indicators(
-            ensemble=ensemble,
-            MEMBER_LIST=MEMBER_LIST,
-            condition=condition_retro,
-            vector=vector_prior,
-            top_n_indicator=top_n_indicator,
-            dict_prior=dict_prior,
-            dict_current=dict_current,
-            mappings=mappings,
-            variables=variables,
-        )
+        if mode in ['r', 'b']:
+            print("Finding retrospective indicators...")
+            retro_results = utils.get_indicators(
+                ensemble=ensemble,
+                MEMBER_LIST=MEMBER_LIST,
+                condition=condition_retro,
+                vector=vector_prior,
+                top_n_indicator=top_n_indicator,
+                dict_prior=dict_prior,
+                dict_current=dict_current,
+                mappings=mappings,
+                variables=variables,
+            )
 
-        print("Finding prospective indicators...")
-        pros_results = utils.get_indicators(
-            ensemble=ensemble,
-            MEMBER_LIST=MEMBER_LIST,
-            condition=condition_prosp,
-            vector=vector_current,
-            top_n_indicator=top_n_indicator,
-            dict_prior=dict_prior,
-            dict_current=dict_current,
-            mappings=mappings,
-            variables=variables,
-        )
+        if mode in ['p', 'b']:
+            print("Finding prospective indicators...")
+            pros_results = utils.get_indicators(
+                ensemble=ensemble,
+                MEMBER_LIST=MEMBER_LIST,
+                condition=condition_prosp,
+                vector=vector_current,
+                top_n_indicator=top_n_indicator,
+                dict_prior=dict_prior,
+                dict_current=dict_current,
+                mappings=mappings,
+                variables=variables,
+            )
 
         final_results = {
             "retrospective": retro_results,
