@@ -47,6 +47,7 @@ def detect_internal(
     mem_date_start: str = None,
     mem_date_end: str = None,
     model: int = 63,
+    mode: str = 'b',
     auto_update: bool = False,
     threshold: float = 0,
     top_n_indicator: int = 5,
@@ -58,13 +59,13 @@ def detect_internal(
     --------
     payer : str
         name of payer table (e.g. 'CD_HEALTHFIRST')
-        
+
     server : str
         CARA server on which the payer is located ('CARABWDB03')
-        
+
     date_start : str
         string as 'YYYY-MM-DD' to get claims data from
-        
+
     date_end : str
         string as 'YYYY-MM-DD' to get claims data to
 
@@ -75,29 +76,33 @@ def detect_internal(
     file_date_lmt : str, optional (default: None)
         string as 'YYYY-MM-DD' indicating the latest file date limit of patient
         codes, generally at the half of one year
-     
+
     mem_date_start : str, optional (default: None)
         as 'YYYY-MM-DD', starting date to filter memberIDs by dateInserted
-        
+
     mem_date_end : str, optional (default: None)
         as 'YYYY-MM-DD', ending date to filter memberIDs by dateInserted
-        
+
     model : int, optional (default: 63)
         an integer of model version ID in
         MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only
         support 'CDPS', 'CMS' and 'HHS'
-        
+
+    mode : str
+        one of 'r' for retrospective only, 'p' for prospective only and 'b' for
+        both.
+
     auto_update : boolean, optional (default: False)
         if True, and no matching model pickled, it will call `update` function
         first
-        
+
     threshold : float, optional (default: 0)
         a float between 0 and 1 for filtering output confidence above it
-        
+
     top_n_indicator : int, optional (default: 5)
         how many indicators to output for each member each HCC. If 0, it won't
         return any supporting evidences
-    
+
     Return
     --------
     final_results : dict
@@ -197,6 +202,11 @@ def detect_internal(
     """
 
     # initialize
+    assert mode in ['r', 'p', 'b'], (
+        'ValueError: "mode" can only be one of "r", "p" or "b", '
+        f'got {mode} instead.'
+    )
+
     if memberID_list and not isinstance(memberID_list, list):
         memberID_list = [memberID_list]
     if not memberID_list:
@@ -252,11 +262,17 @@ def detect_internal(
         table["year"] = table.service_date.map(lambda x: x.year)
         del table["service_date"]
         return core_ml(
-            table, year, model, auto_update, threshold, top_n_indicator
+            table,
+            target_year=year,
+            model=model,
+            mode=mode,
+            auto_update=auto_update,
+            threshold=threshold,
+            top_n_indicator=top_n_indicator,
         )
     else:
         memberID_list = [
-            memberID_list[i : i + 40000]
+            memberID_list[i: i + 40000]
             for i in range(0, len(memberID_list), 40000)
         ]
 
@@ -285,7 +301,13 @@ def detect_internal(
             table["year"] = table.service_date.map(lambda x: x.year)
             del table["service_date"]
             sub_results = core_ml(
-                table, year, model, auto_update, threshold, top_n_indicator
+                table,
+                target_year=year,
+                model=model,
+                mode=mode,
+                auto_update=auto_update,
+                threshold=threshold,
+                top_n_indicator=top_n_indicator,
             )
             results["retrospective"].extend(sub_results["retrospective"])
             results["prospective"].extend(sub_results["prospective"])
@@ -304,7 +326,7 @@ def detect_api(json_body: dict):
     --------
     json_body : dict
         the API body validated by Flask application
-    
+
     Return
     --------
     final_results : dict
@@ -446,6 +468,7 @@ def detect_api(json_body: dict):
         table,
         target_year=target_year,
         model=json_body["model_version_ID"],
+        mode=json_body.get("mode", "b"),
         auto_update=False,
         threshold=json_body.get("threshold", 0.0),
         top_n_indicator=json_body.get("top_n_indicator", 5),
@@ -489,7 +512,7 @@ def core_ml(
     --------
     table : pandas.DataFrame
         a table with coulumn ['mem_id', 'provider_id', 'spec_id', 'year', 'code']
-    
+
     target_year : int
         target service year
 
@@ -497,22 +520,18 @@ def core_ml(
         an integer of model version ID in
         MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only
         support 'CDPS', 'CMS' and 'HHS'
-    
-    mode : str
-        one of 'r' for retrospective only, 'p' for prospective only and 'b' for
-        both.
-        
+
     auto_update : boolean, optional (default: False)
         if True, and no matching model pickled, it will call `update` function
         first
-        
+
     threshold : float, optional (default: 0)
         a float between 0 and 1 for filtering output confidence above it
-        
+
     top_n_indicator : int, optional (default: 5)
         how many indicators to output for each member each HCC; If 0, it won't
         return any supporting evidences
-    
+
     Return
     --------
     final_results : dict
@@ -557,7 +576,7 @@ def core_ml(
             threshold=0.9,
             top_n_indicator=5,
         )
-        
+
         {
             "retrospective": [
                 {
@@ -609,11 +628,6 @@ def core_ml(
         }
     """
     print("Start: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-
-    assert mode in ['r', 'p', 'b'], (
-        'ValueError: "mode" can only be one of "r", "p" or "b", '
-        f'got {mode} instead.'
-    )
 
     if not os.path.exists(
         os.path.join(
@@ -751,7 +765,7 @@ def core_ml(
         condition_prosp = condition_prosp.loc[
             (condition_prosp["confidence"] >= threshold)
             | (condition_prosp["known_current"] == 1)
-            | (condition_prosp["kown_historical"] == 1),
+            | (condition_prosp["known_historical"] == 1),
             :,
         ]
         condition_prosp["confidence"] = condition_prosp["confidence"].round(6)
@@ -787,13 +801,21 @@ def core_ml(
             )
 
         final_results = {
-            "retrospective": retro_results,
-            "prospective": pros_results,
+            "retrospective": retro_results if mode in ['r', 'b'] else [],
+            "prospective": pros_results if mode in ['p', 'b'] else [],
         }
     else:
         final_results = {
-            "retrospective": utils.df_to_json(condition_retro),
-            "prospective": utils.df_to_json(condition_prosp),
+            "retrospective": (
+                utils.df_to_json(condition_retro)
+                if mode in ['r', 'b']
+                else []
+            ),
+            "prospective": (
+                utils.df_to_json(condition_prosp)
+                if mode in ['p', 'b']
+                else []
+            ),
         }
 
     print("End  : " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
@@ -812,7 +834,7 @@ def update(model, year_of_service):
         an integer of model version ID in
         MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only
         support 'CDPS', 'CMS' and 'HHS'
-        
+
     year_of_service : int
         a intiger of the year of service for training data retrieval purpose
 
@@ -823,13 +845,13 @@ def update(model, year_of_service):
     ########################## Training New Model 63 ##########################
     Fetching training dateset...
     Time elapase: 0:11:00.040693
-    
+
     Updating new mapping table...
     Time elapase: 0:00:00.249601
-    
+
     Updating new variable spaces...
     Time elapase: 0:00:12.090078
-    
+
     Updating new machine learning models...
     Training HCC1
     Training HCC10
@@ -837,7 +859,7 @@ def update(model, year_of_service):
     Training HCC96
     Training HCC99
     Time elapase: 05:08:24.738294
-    
+
     ######################## Finished Training Model 63 #######################
     """
     assert isinstance(model, int) and year_of_service > 2010, print(
@@ -870,7 +892,7 @@ def delete(model):
         an integer of model version ID in
         MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only
         support 'CDPS', 'CMS' and 'HHS'
-    
+
     Examples
     --------
     >>> from shakespeare import delete

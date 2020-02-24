@@ -287,7 +287,7 @@ def get_indicators(
 
             # retrospective known mappings or prospective UCCC mappings
             if (
-                condition[(mem_id, HCC)].get("kown_historical", 0) == 1
+                condition[(mem_id, HCC)].get("known_historical", 0) == 1
                 or condition[(mem_id, HCC)].get("known", 0) == 1
             ):
                 mapped_codes = [
@@ -308,7 +308,7 @@ def get_indicators(
                 continue
 
             # suspected SHAP indicators
-            if "kown_historical" in condition[(mem_id, HCC)]:
+            if "known_historical" in condition[(mem_id, HCC)]:
                 codes = current_codes + prior_codes
                 pra_list = (
                     dict_current.get(mem_id, {"provider_id": []})[
