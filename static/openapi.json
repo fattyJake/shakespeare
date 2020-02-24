@@ -23,7 +23,7 @@
                         "description": "Successful response",
                         "content": {
                             "text/html": {
-                                "example": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">\n<title>Risk Gap Targeting Service</title>\n<h2>Welcome to risk gap targeting Service !</h2>\n<p>Please POST your requests through /detect or /update with body as application/json. To try out API and view the documentation, please view /documentation.</p>"
+                                "example": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">\n<title>CARA ML Service</title>\n<h2>Welcome to CARA ML Service !</h2>\n<p>Please POST your requests through /retrospective or /prospective with data as application/json. To try out API and view the documentation, please view /documentation.</p>"
                             }
                         }
                     }
@@ -77,71 +77,6 @@
                     }
                 }
             }
-        },
-        "/update": {
-            "patch": {
-                "summary": "train and add a model ML into server for one model version ID",
-                "operationId": "update",
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/TrainingData"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Successful."
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/BadRequestError"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/InternalError"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/delete/{modelVersionID}": {
-            "delete": {
-                "summary": "delete entire machine learning model of certain model_version_ID",
-                "operationId": "delete",
-                "parameters": [
-                    {
-                        "name": "modelVersionID",
-                        "in": "path",
-                        "description": "Model version ID to delete",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful."
-                    },
-                    "404": {
-                        "description": "modelVersionID not found."
-                    }
-                }
-            }
         }
     },
     "components": {
@@ -174,6 +109,11 @@
                         "example": 63,
                         "description": "an integer of model version ID in Inovalon database MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only support CDPS, CMS and HHS"
                     },
+                    "mode": {
+                        "type": "string",
+                        "example": "b",
+                        "description": "a flag informing the API to conduct which line of business. It can only be \"r\" representing retrospective only, \"p\" representing prospective only or \"b\" representing both."
+                    },
                     "threshold": {
                         "type": "number",
                         "example": 0.5,
@@ -181,15 +121,10 @@
                         "maximum": 1.0,
                         "description": "the threhold of output confidence level (only return those suspected gaps with confidence greater than threshold)."
                     },
-                    "get_indicators": {
-                        "type": "boolean",
-                        "example": true,
-                        "description": "if true, return top n indicators of claim codes that contribute the most to the suspected, or return all ICD codes the directly indicating such HCCs. By defualt the parameter is true."
-                    },
                     "top_indicators": {
                         "type": "integer",
                         "example": 5,
-                        "description": "number of indicators to output for suspected gaps if get_indicators is true. By default the parameter is 5."
+                        "description": "number of indicators to output for suspected gaps if get_indicators is true. By default the parameter is 5. If 0 passed, the results won't return any supporting evidences."
                     },
                     "payload": {
                         "type": "array",
@@ -230,10 +165,10 @@
                                                 "example": "I10",
                                                 "description": "the code under corresponding code type with all decimal removed."
                                             },
-                                            "pra_id": {
+                                            "provider_id": {
                                                 "type": "integer",
                                                 "example": 234,
-                                                "description": "the practitioner ID who reported this claim code."
+                                                "description": "the provider ID who reported this claim code."
                                             },
                                             "spec_id": {
                                                 "type": "integer",
@@ -396,86 +331,102 @@
                     ]
                 }
             },
-            "TrainingData": {
+            "Result": {
                 "type": "object",
                 "required": [
-                    "correlation_id",
+                    "Request Status",
+                    "target_year",
                     "model_version_ID",
-                    "payload"
+                    "retrospective",
+                    "prospective"
                 ],
                 "properties": {
-                    "correlation_id": {
+                    "Request Status": {
                         "type": "string",
-                        "example": "12345",
-                        "description": "the ID of this call for developers debugging reference."
+                        "example": "Success"
+                    },
+                    "target_year": {
+                        "type": "integer",
+                        "example": 2020,
+                        "description": "an integer the target service year, all prior years' data will treated as historical data and data under target_year will be treated as current service year. If not provided, model will use the server sytem today's year."
                     },
                     "model_version_ID": {
                         "type": "integer",
                         "example": 63,
                         "description": "an integer of model version ID in Inovalon database MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only support CDPS, CMS and HHS"
                     },
-                    "payload": {
-                        "type": "object",
-                        "required": [
-                            "mapping",
-                            "training_data"
-                        ],
-                        "properties": {
-                            "mapping": {
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "code_type": {
-                                            "type": "string",
-                                            "example": "ICD10DX",
-                                            "description": "the claim type, only accept \"ICD9DX\", \"ICD10DX\", \"CPT\", \"HCPCS\", \"NDC9\", \"ICD9PX\", \"ICD10PX\" or \"DRG\"."
-                                        },
-                                        "code": {
-                                            "type": "string",
-                                            "example": "I10",
-                                            "description": "the code under corresponding code type with all decimal removed."
-                                        },
-                                        "hcc": {
-                                            "type": "array",
-                                            "items": {
+                    "retrospective": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "mem_id",
+                                "gaps"
+                            ],
+                            "properties": {
+                                "mem_id": {
+                                    "type": "integer",
+                                    "example": 100001,
+                                    "description": "the ID of patient/member/beneficiary."
+                                },
+                                "gaps": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "condition_category",
+                                            "confidence",
+                                            "known"
+                                        ],
+                                        "properties": {
+                                            "condition_category": {
                                                 "type": "string",
                                                 "example": "HCC18",
                                                 "description": "high-level CMS/HHS/CDPS defined conditions to be targeted."
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            "training_data": {
-                                "type": "array",
-                                "description": "claim codes of each members in one historical service year as training data",
-                                "items": {
-                                    "type": "object",
-                                    "required": [
-                                        "mem_id",
-                                        "codes"
-                                    ],
-                                    "properties": {
-                                        "mem_id": {
-                                            "type": "integer",
-                                            "example": 100001,
-                                            "description": "the ID of patient/member/beneficiary, can be fake IDs."
-                                        },
-                                        "codes": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "code_type": {
-                                                        "type": "string",
-                                                        "example": "ICD10DX",
-                                                        "description": "the claim type, only accept \"ICD9DX\", \"ICD10DX\", \"CPT\", \"HCPCS\", \"NDC9\", \"ICD9PX\", \"ICD10PX\" or \"DRG\"."
-                                                    },
-                                                    "code": {
-                                                        "type": "string",
-                                                        "example": "I10",
-                                                        "description": "the code under corresponding code type with all decimal removed."
+                                            },
+                                            "confidence": {
+                                                "type": "number",
+                                                "minimum": 0.0,
+                                                "maximum": 1.0,
+                                                "example": 0.830449,
+                                                "description": "the confidence level of gap based on machine learning (probability between 0 to 1)."
+                                            },
+                                            "known": {
+                                                "type": "integer",
+                                                "enum": [
+                                                    0,
+                                                    1
+                                                ],
+                                                "example": 1,
+                                                "description": "whether the condition is a known condition, i.e. there are at least one ICD10DX code directly indicating the condition based on CMS/HHS/CDPS model."
+                                            },
+                                            "top_indicators": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "code_type",
+                                                        "code"
+                                                    ],
+                                                    "properties": {
+                                                        "code_type": {
+                                                            "type": "string",
+                                                            "example": "ICD10DX",
+                                                            "description": "the claim type, one of \"ICD9DX\", \"ICD10DX\", \"CPT\", \"HCPCS\", \"NDC9\", \"ICD9PX\", \"ICD10PX\" or \"DRG\"."
+                                                        },
+                                                        "code": {
+                                                            "type": "string",
+                                                            "example": "I10",
+                                                            "description": "one of the top N claim codes that selected by machien learning algorithm supporting suspcted condition or the claim codes in prior years directly indicating the condition."
+                                                        },
+                                                        "provider_id": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "integer",
+                                                                "example": 234,
+                                                                "description": "the practitioner ID who reported this claim code."
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
@@ -484,268 +435,372 @@
                                 }
                             }
                         }
+                    },
+                    "prospective": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "mem_id",
+                                "gaps"
+                            ],
+                            "properties": {
+                                "mem_id": {
+                                    "type": "integer",
+                                    "example": 100001,
+                                    "description": "the ID of patient/member/beneficiary."
+                                },
+                                "gaps": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "condition_category",
+                                            "confidence",
+                                            "known_current",
+                                            "known_historical"
+                                        ],
+                                        "properties": {
+                                            "condition_category": {
+                                                "type": "string",
+                                                "example": "HCC18",
+                                                "description": "high-level CMS/HHS/CDPS defined conditions to be targeted."
+                                            },
+                                            "confidence": {
+                                                "type": "number",
+                                                "minimum": 0.0,
+                                                "maximum": 1.0,
+                                                "example": 0.830449,
+                                                "description": "the confidence level of gap based on machine learning (probability between 0 to 1)."
+                                            },
+                                            "known_current": {
+                                                "type": "integer",
+                                                "enum": [
+                                                    0,
+                                                    1
+                                                ],
+                                                "example": 1,
+                                                "description": "whether the condition is already a known condition in the target year, i.e. there are at least one ICD10DX code in target year directly indicating the condition based on CMS/HHS/CDPS model."
+                                            },
+                                            "known_historical": {
+                                                "type": "integer",
+                                                "enum": [
+                                                    0,
+                                                    1
+                                                ],
+                                                "example": 0,
+                                                "description": "whether the condition is known in prior service period, i.e. there are at least one ICD10DX code in prior year directly indicating the condition based on CMS/HHS/CDPS model."
+                                            },
+                                            "top_indicators": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "code_type",
+                                                        "code"
+                                                    ],
+                                                    "properties": {
+                                                        "code_type": {
+                                                            "type": "string",
+                                                            "example": "ICD10DX",
+                                                            "description": "the claim type, one of \"ICD9DX\", \"ICD10DX\", \"CPT\", \"HCPCS\", \"NDC9\", \"ICD9PX\", \"ICD10PX\" or \"DRG\"."
+                                                        },
+                                                        "code": {
+                                                            "type": "string",
+                                                            "example": "I10",
+                                                            "description": "one of the top N claim codes that selected by machien learning algorithm supporting suspcted condition or the claim codes in target year directly indicating the known condition or the claim codes in prior years directly indicating historical known condition."
+                                                        },
+                                                        "provider_id": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "integer",
+                                                                "example": 234,
+                                                                "description": "the practitioner ID who reported this claim code."
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "warnings": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "example": {
+                                "oneOf": [
+                                    "Detected code types that are not recognized: ICD10. The model only accept code types \"ICD9DX\", \"ICD10DX\", \"ICD9PX\", \"ICD10X\", \"CPT\", \"HCPCS\", \"NDC9\" and \"DRG\". Please check and consider another try.",
+                                    "No target year provided, use today's year as target year instead.",
+                                    "There are claims documented in service years that are later then target year: 2020. Please check and consider another try."
+                                ]
+                            }
+                        }
                     }
+                },
+                "example": {
+                    "Request Status": "Success",
+                    "correlation_id": "12345",
+                    "model_version_ID": 63,
+                    "prospective": [
+                        {
+                            "gaps": [
+                                {
+                                    "condition_category": "HCC55",
+                                    "confidence": 0.455976,
+                                    "known_current": 0,
+                                    "known_historical": 0,
+                                    "top_indicators": [
+                                        {
+                                            "code": "A0425",
+                                            "code_type": "HCPCS",
+                                            "provider_id": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "condition_category": "HCC79",
+                                    "confidence": 0.471811,
+                                    "known_current": 0,
+                                    "known_historical": 0,
+                                    "top_indicators": [
+                                        {
+                                            "code": "A0425",
+                                            "code_type": "HCPCS",
+                                            "provider_id": []
+                                        },
+                                        {
+                                            "code": "99309",
+                                            "code_type": "CPT",
+                                            "provider_id": [
+                                                2576568
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "condition_category": "HCC111",
+                                    "confidence": 0.395838,
+                                    "known_current": 0,
+                                    "known_historical": 1,
+                                    "top_indicators": [
+                                        {
+                                            "code": "J449",
+                                            "code_type": "ICD10DX",
+                                            "provider_id": [
+                                                505
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "condition_category": "HCC19",
+                                    "confidence": 0.392743,
+                                    "known_current": 1,
+                                    "known_historical": 0,
+                                    "top_indicators": [
+                                        {
+                                            "code": "E119",
+                                            "code_type": "ICD10DX",
+                                            "provider_id": [
+                                                492195
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "condition_category": "HCC58",
+                                    "confidence": 0.572275,
+                                    "known_current": 0,
+                                    "known_historical": 0,
+                                    "top_indicators": [
+                                        {
+                                            "code": "A0425",
+                                            "code_type": "HCPCS",
+                                            "provider_id": []
+                                        },
+                                        {
+                                            "code": "99309",
+                                            "code_type": "CPT",
+                                            "provider_id": [
+                                                2576568
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "condition_category": "HCC86",
+                                    "confidence": 0.045032,
+                                    "known_current": 0,
+                                    "known_historical": 1,
+                                    "top_indicators": [
+                                        {
+                                            "code": "I214",
+                                            "code_type": "ICD10DX",
+                                            "provider_id": [
+                                                317793
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "condition_category": "HCC57",
+                                    "confidence": 0.53715,
+                                    "known_current": 0,
+                                    "known_historical": 0,
+                                    "top_indicators": [
+                                        {
+                                            "code": "99309",
+                                            "code_type": "CPT",
+                                            "provider_id": [
+                                                2576568
+                                            ]
+                                        },
+                                        {
+                                            "code": "A0425",
+                                            "code_type": "HCPCS",
+                                            "provider_id": []
+                                        }
+                                    ]
+                                }
+                            ],
+                            "mem_id": 23023
+                        },
+                        {
+                            "gaps": [
+                                {
+                                    "condition_category": "HCC19",
+                                    "confidence": 0.189366,
+                                    "known_current": 0,
+                                    "known_historical": 1,
+                                    "top_indicators": [
+                                        {
+                                            "code": "E119",
+                                            "code_type": "ICD10DX",
+                                            "provider_id": [
+                                                29061
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "condition_category": "HCC47",
+                                    "confidence": 0.055095,
+                                    "known_current": 0,
+                                    "known_historical": 1,
+                                    "top_indicators": [
+                                        {
+                                            "code": "D709",
+                                            "code_type": "ICD10DX",
+                                            "provider_id": [
+                                                22128
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "condition_category": "HCC114",
+                                    "confidence": 0.027371,
+                                    "known_current": 1,
+                                    "known_historical": 1,
+                                    "top_indicators": [
+                                        {
+                                            "code": "J156",
+                                            "code_type": "ICD10DX",
+                                            "provider_id": []
+                                        }
+                                    ]
+                                }
+                            ],
+                            "mem_id": 51620
+                        }
+                    ],
+                    "retrospective": [
+                        {
+                            "gaps": [
+                                {
+                                    "condition_category": "HCC111",
+                                    "confidence": 0.107791,
+                                    "known": 1,
+                                    "top_indicators": [
+                                        {
+                                            "code": "J449",
+                                            "code_type": "ICD10DX",
+                                            "provider_id": [
+                                                505
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "condition_category": "HCC86",
+                                    "confidence": 0.013296,
+                                    "known": 1,
+                                    "top_indicators": [
+                                        {
+                                            "code": "I214",
+                                            "code_type": "ICD10DX",
+                                            "provider_id": [
+                                                317793
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ],
+                            "mem_id": 23023
+                        },
+                        {
+                            "gaps": [
+                                {
+                                    "condition_category": "HCC19",
+                                    "confidence": 0.189366,
+                                    "known": 1,
+                                    "top_indicators": [
+                                        {
+                                            "code": "E119",
+                                            "code_type": "ICD10DX",
+                                            "provider_id": [
+                                                29061
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "condition_category": "HCC47",
+                                    "confidence": 0.055095,
+                                    "known": 1,
+                                    "top_indicators": [
+                                        {
+                                            "code": "D709",
+                                            "code_type": "ICD10DX",
+                                            "provider_id": [
+                                                22128
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "condition_category": "HCC114",
+                                    "confidence": 0.027371,
+                                    "known": 1,
+                                    "top_indicators": [
+                                        {
+                                            "code": "J156",
+                                            "code_type": "ICD10DX",
+                                            "provider_id": []
+                                        }
+                                    ]
+                                }
+                            ],
+                            "mem_id": 51620
+                        }
+                    ],
+                    "target_year": 2019,
+                    "warnings": []
                 }
-            },
-            "Result": {
-                "Request Status": "Success",
-                "correlation_id": "12345",
-                "model_version_ID": 63,
-                "prospective": [
-                    {
-                        "gaps": [
-                            {
-                                "condition_category": "HCC86",
-                                "confidence": 0.045032,
-                                "known_current": 0,
-                                "kown_historical": 1,
-                                "top_indicators": [
-                                    {
-                                        "code": "I214",
-                                        "code_type": "ICD10DX",
-                                        "provider_id": [
-                                            317793
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                "condition_category": "HCC19",
-                                "confidence": 0.392743,
-                                "known_current": 1,
-                                "kown_historical": 0,
-                                "top_indicators": [
-                                    {
-                                        "code": "E119",
-                                        "code_type": "ICD10DX",
-                                        "provider_id": [
-                                            492195
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                "condition_category": "HCC79",
-                                "confidence": 0.471811,
-                                "known_current": 0,
-                                "kown_historical": 0,
-                                "top_indicators": [
-                                    {
-                                        "code": "A0425",
-                                        "code_type": "HCPCS",
-                                        "provider_id": []
-                                    },
-                                    {
-                                        "code": "99309",
-                                        "code_type": "CPT",
-                                        "provider_id": [
-                                            2576568
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                "condition_category": "HCC57",
-                                "confidence": 0.53715,
-                                "known_current": 0,
-                                "kown_historical": 0,
-                                "top_indicators": [
-                                    {
-                                        "code": "99309",
-                                        "code_type": "CPT",
-                                        "provider_id": [
-                                            2576568
-                                        ]
-                                    },
-                                    {
-                                        "code": "A0425",
-                                        "code_type": "HCPCS",
-                                        "provider_id": []
-                                    }
-                                ]
-                            },
-                            {
-                                "condition_category": "HCC55",
-                                "confidence": 0.455976,
-                                "known_current": 0,
-                                "kown_historical": 0,
-                                "top_indicators": [
-                                    {
-                                        "code": "A0425",
-                                        "code_type": "HCPCS",
-                                        "provider_id": []
-                                    }
-                                ]
-                            },
-                            {
-                                "condition_category": "HCC111",
-                                "confidence": 0.395838,
-                                "known_current": 0,
-                                "kown_historical": 1,
-                                "top_indicators": [
-                                    {
-                                        "code": "J449",
-                                        "code_type": "ICD10DX",
-                                        "provider_id": [
-                                            505
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                "condition_category": "HCC58",
-                                "confidence": 0.572275,
-                                "known_current": 0,
-                                "kown_historical": 0,
-                                "top_indicators": [
-                                    {
-                                        "code": "A0425",
-                                        "code_type": "HCPCS",
-                                        "provider_id": []
-                                    },
-                                    {
-                                        "code": "99309",
-                                        "code_type": "CPT",
-                                        "provider_id": [
-                                            2576568
-                                        ]
-                                    }
-                                ]
-                            }
-                        ],
-                        "mem_id": 23023
-                    },
-                    {
-                        "gaps": [
-                            {
-                                "condition_category": "HCC19",
-                                "confidence": 0.189366,
-                                "known_current": 0,
-                                "kown_historical": 1,
-                                "top_indicators": [
-                                    {
-                                        "code": "E119",
-                                        "code_type": "ICD10DX",
-                                        "provider_id": [
-                                            29061
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                "condition_category": "HCC47",
-                                "confidence": 0.055095,
-                                "known_current": 0,
-                                "kown_historical": 1,
-                                "top_indicators": [
-                                    {
-                                        "code": "D709",
-                                        "code_type": "ICD10DX",
-                                        "provider_id": [
-                                            22128
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                "condition_category": "HCC114",
-                                "confidence": 0.027371,
-                                "known_current": 1,
-                                "kown_historical": 1,
-                                "top_indicators": [
-                                    {
-                                        "code": "J156",
-                                        "code_type": "ICD10DX",
-                                        "provider_id": []
-                                    }
-                                ]
-                            }
-                        ],
-                        "mem_id": 51620
-                    }
-                ],
-                "retrospective": [
-                    {
-                        "gaps": [
-                            {
-                                "condition_category": "HCC86",
-                                "confidence": 0.013296,
-                                "known": 1,
-                                "top_indicators": [
-                                    {
-                                        "code": "I214",
-                                        "code_type": "ICD10DX",
-                                        "provider_id": [
-                                            317793
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                "condition_category": "HCC111",
-                                "confidence": 0.107791,
-                                "known": 1,
-                                "top_indicators": [
-                                    {
-                                        "code": "J449",
-                                        "code_type": "ICD10DX",
-                                        "provider_id": [
-                                            505
-                                        ]
-                                    }
-                                ]
-                            }
-                        ],
-                        "mem_id": 23023
-                    },
-                    {
-                        "gaps": [
-                            {
-                                "condition_category": "HCC19",
-                                "confidence": 0.189366,
-                                "known": 1,
-                                "top_indicators": [
-                                    {
-                                        "code": "E119",
-                                        "code_type": "ICD10DX",
-                                        "provider_id": [
-                                            29061
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                "condition_category": "HCC47",
-                                "confidence": 0.055095,
-                                "known": 1,
-                                "top_indicators": [
-                                    {
-                                        "code": "D709",
-                                        "code_type": "ICD10DX",
-                                        "provider_id": [
-                                            22128
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                "condition_category": "HCC114",
-                                "confidence": 0.027371,
-                                "known": 1,
-                                "top_indicators": [
-                                    {
-                                        "code": "J156",
-                                        "code_type": "ICD10DX",
-                                        "provider_id": []
-                                    }
-                                ]
-                            }
-                        ],
-                        "mem_id": 51620
-                    }
-                ],
-                "target_year": 2019,
-                "warnings": []
             },
             "BadRequestError": {
                 "type": "object",

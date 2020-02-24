@@ -112,6 +112,21 @@ def check_model_version(model_version_ID, correlation_id, update):
             return None
 
 
+def check_mode(mode, correlation_id):
+    if mode not in ['r', 'p', 'b']:
+        return {
+            "Request Status": "Failed",
+            "correlation_id": correlation_id,
+            "request_api": "RiskGapTargetingService",
+            "Error Message": (
+                '"mode" can only be one of "r", "p" or "b", '
+                f'got {mode} instead.'
+            ),
+        }
+    else:
+        return None
+
+
 @application.route("/", methods=["GET", "POST"])
 def welcome():
     response_text = """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
@@ -144,6 +159,11 @@ def detect():
         if error_response:
             return jsonify(error_response), 400
 
+        mode = content.get("mode", "b")
+        error_response = check_mode(mode, correlation_id)
+        if error_response:
+            return jsonify(error_response), 400
+
         final_results = {
             "Request Status": "Success",
             "correlation_id": correlation_id,
@@ -165,82 +185,82 @@ def detect():
         return jsonify(error_response), 500
 
 
-@application.route("/update", methods=["PATCH"])
-def update_wrapper(model_version_ID):
-    content = request.get_json(silent=True)
-    error_response = check_content(content)
-    if error_response:
-        return jsonify(error_response), 400
+# @application.route("/update", methods=["PATCH"])
+# def update_wrapper(model_version_ID):
+#     content = request.get_json(silent=True)
+#     error_response = check_content(content)
+#     if error_response:
+#         return jsonify(error_response), 400
 
-    correlation_id = content.get("correlation_id", "")
+#     correlation_id = content.get("correlation_id", "")
 
-    try:
-        payload = content.get("payload", {})
-        error_response = check_payload(payload, correlation_id)
-        if error_response:
-            return jsonify(error_response), 400
+#     try:
+#         payload = content.get("payload", {})
+#         error_response = check_payload(payload, correlation_id)
+#         if error_response:
+#             return jsonify(error_response), 400
 
-        model_version_ID = content.get("model_version_ID", "null")
-        error_response = check_model_version(
-            model_version_ID, correlation_id, True
-        )
-        if error_response:
-            return jsonify(error_response), 400
+#         model_version_ID = content.get("model_version_ID", "null")
+#         error_response = check_model_version(
+#             model_version_ID, correlation_id, True
+#         )
+#         if error_response:
+#             return jsonify(error_response), 400
 
-        print(
-            "############################## Training New Model "
-            + str(model_version_ID)
-            + " ##############################"
-        )
-        training_set = {
-            d["mem_id"]: list(
-                set([c["code_type"] + "-" + c["code"] for c in d["codes"]])
-            )
-            for d in payload["training_set"]
-        }
-        mappings = {
-            d["code_type"] + "-" + d["code"]: d["hcc"]
-            for d in payload["mapping"]
-        }
-        pickle.dump(
-            mappings,
-            open(
-                os.path.join(
-                    os.path.dirname(os.path.realpath(__file__)),
-                    r"pickle_files",
-                    r"mappings",
-                    f"mapping_{model_version_ID}",
-                ),
-                "wb",
-            ),
-        )
-        training.update_variables(training_set, model_version_ID)
-        training.update_ensembles(training_set, model_version_ID)
-        print(
-            "############################ Finished Training Model "
-            + str(model_version_ID)
-            + " ###########################"
-        )
+#         print(
+#             "############################## Training New Model "
+#             + str(model_version_ID)
+#             + " ##############################"
+#         )
+#         training_set = {
+#             d["mem_id"]: list(
+#                 set([c["code_type"] + "-" + c["code"] for c in d["codes"]])
+#             )
+#             for d in payload["training_set"]
+#         }
+#         mappings = {
+#             d["code_type"] + "-" + d["code"]: d["hcc"]
+#             for d in payload["mapping"]
+#         }
+#         pickle.dump(
+#             mappings,
+#             open(
+#                 os.path.join(
+#                     os.path.dirname(os.path.realpath(__file__)),
+#                     r"pickle_files",
+#                     r"mappings",
+#                     f"mapping_{model_version_ID}",
+#                 ),
+#                 "wb",
+#             ),
+#         )
+#         training.update_variables(training_set, model_version_ID)
+#         training.update_ensembles(training_set, model_version_ID)
+#         print(
+#             "############################ Finished Training Model "
+#             + str(model_version_ID)
+#             + " ###########################"
+#         )
 
-        return "Successful.", 200
-    except Exception as e:
-        tb = traceback.format_exc().split("\n")
-        error_response = {
-            "Request Status": "Failed",
-            "Error": e.__class__.__name__,
-            "Error Message": str(e),
-            "stack_trace": "\n".join(tb),
-        }
-        return jsonify(error_response), 500
+#         return "Successful.", 200
+#     except Exception as e:
+#         tb = traceback.format_exc().split("\n")
+#         error_response = {
+#             "Request Status": "Failed",
+#             "Error": e.__class__.__name__,
+#             "Error Message": str(e),
+#             "stack_trace": "\n".join(tb),
+#         }
+#         return jsonify(error_response), 500
 
 
-@application.route("/delete/<int:model_version_ID>", methods=["DELETE"])
-def delete_wrapper(model_version_ID):
-    try:
-        delete(model_version_ID)
-        return "Successful.", 200
-    except:
-        return "modelVersionID not found.", 404
+# @application.route("/delete/<int:model_version_ID>", methods=["DELETE"])
+# def delete_wrapper(model_version_ID):
+#     try:
+#         delete(model_version_ID)
+#         return "Successful.", 200
+#     except:
+#         return "modelVersionID not found.", 404
 
 
 # def periodcal_data_caching(data):

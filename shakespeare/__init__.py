@@ -756,7 +756,7 @@ def core_ml(
             else 0,
             axis=1,
         )
-        condition_prosp["kown_historical"] = condition_prosp.apply(
+        condition_prosp["known_historical"] = condition_prosp.apply(
             lambda x: 1
             if x.condition_category in member_known_prior.get(x.mem_id, [])
             else 0,
