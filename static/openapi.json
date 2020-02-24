@@ -23,7 +23,7 @@
                         "description": "Successful response",
                         "content": {
                             "text/html": {
-                                "example": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">\n<title>CARA ML Service</title>\n<h2>Welcome to CARA ML Service !</h2>\n<p>Please POST your requests through /retrospective or /prospective with data as application/json. To try out API and view the documentation, please view /documentation.</p>"
+                                "example": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">\n<title>Risk Gap Targeting Service</title>\n<h2>Welcome to Risk Gap Targeting Service !</h2>\n<p>Please POST your requests through /retrospective or /prospective with data as application/json. To try out API and view the documentation, please view /documentation.</p>"
                             }
                         }
                     }
@@ -848,7 +848,7 @@
                     },
                     "request_api": {
                         "type": "string",
-                        "example": "CARAMLService"
+                        "example": "RiskGapTargetingService"
                     },
                     "Error": {
                         "type": "string",
