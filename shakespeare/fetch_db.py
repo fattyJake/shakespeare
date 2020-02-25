@@ -209,10 +209,7 @@ def batch_member_codes(
                     e.pra_id                            AS provider_id,
                     pra.spec_id                         AS spec_id,
                     mrr_StartDate                       AS service_date,
-                    CASE icdVersionInd
-                        WHEN 9 THEN 'ICD9DX' WHEN 10 THEN 'ICD10DX'
-                        ELSE 'ICD9DX' END
-                                                        AS code_type,
+                    'ICD10DX'                           AS code_type,
                     UPPER(e.icd_Code)                   AS code
                 INTO #mrr_temp
                 FROM """
@@ -229,7 +226,7 @@ def batch_member_codes(
                                 """
                 + f"""{mrr_queue_sql if file_date_lmt != 'None' else ''}"""
                 + """
-                WHERE e.mrr_StartDate BETWEEN '"""
+                WHERE icdVersionInd = 10 AND e.mrr_StartDate BETWEEN '"""
                 + date_start
                 + """' AND '"""
                 + date_end
@@ -266,9 +263,7 @@ def batch_member_codes(
         e.pra_id                                              AS provider_id,
         pra.spec_id                                           AS spec_id,
         ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)        AS service_date,
-        CASE icdVersionInd
-            WHEN 9 THEN 'ICD9DX' WHEN 10 THEN 'ICD10DX' ELSE 'ICD9DX' END
-                                                              AS code_type,
+        'ICD10DX'                                             AS code_type,
         UPPER(ed.icd_Code)                                    AS code
     FROM """
         + payer
@@ -286,7 +281,8 @@ def batch_member_codes(
             ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
         + file_date_lmt
         + """'
-    WHERE ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) BETWEEN '"""
+    WHERE icdVersionInd = 10
+        AND ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) BETWEEN '"""
         + date_start
         + """' AND '"""
         + date_end
@@ -376,14 +372,12 @@ def batch_member_codes(
         + date_end
         + """'
     UNION
-    SELECT e.mem_id                                            AS mem_id,
-        e.pra_id                                               AS provider_id,
-        pra.spec_id                                            AS spec_id,
-        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)         AS service_date,
-        CASE icdVersionInd
-            WHEN 9 THEN 'ICD9PX' WHEN 10 THEN 'ICD10PX' ELSE 'ICD9PX' END
-                                                               AS code_type,
-        eProc.icd_Code                                         AS code
+    SELECT e.mem_id                                           AS mem_id,
+        e.pra_id                                              AS provider_id,
+        pra.spec_id                                           AS spec_id,
+        ISNULL(e.enc_DischargeDate, e.enc_ServiceDate)        AS service_date,
+        'ICD10PX'                                             AS code_type,
+        eProc.icd_Code                                        AS code
     FROM """
         + payer
         + """.dbo.tbEncounter e WITH(NOLOCK)
@@ -400,7 +394,8 @@ def batch_member_codes(
             ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
         + file_date_lmt
         + """'
-    WHERE ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) BETWEEN '"""
+    WHERE icdVersionInd = 10
+        AND ISNULL(e.enc_DischargeDate, e.enc_ServiceDate) BETWEEN '"""
         + date_start
         + """' AND '"""
         + date_end
@@ -433,35 +428,36 @@ def batch_member_codes(
         + """' AND '"""
         + date_end
         + """'
-    UNION
-    SELECT l.mem_id                                         AS mem_id,
-        l.pra_id                                            AS provider_id,
-        pra.spec_id                                         AS spec_id,
-        l.lab_ServiceDate                                   AS service_date,
-        'LOINC'                                             AS code_type,
-        LOINC.loinc_Code                                    AS code
-    FROM """
-        + payer
-        + """.dbo.tbLab l WITH(NOLOCK)
-                    INNER JOIN """
-        + payer
-        + """.dbo.tbLabLOINCCPT LOINC ON l.lab_id = LOINC.lab_id
-            INNER JOIN #Temp tp ON tp.mem_id = l.mem_id
-            LEFT JOIN """
-        + payer
-        + """.dbo.tbPractitioner pra ON pra.pra_id = l.pra_id
-            INNER JOIN """
-        + payer
-        + """.dbo.tbFile f WITH(NOLOCK)
-            ON f.fil_id = l.fil_id AND f.fil_StartDate <= '"""
-        + file_date_lmt
-        + """'
-    WHERE l.lab_ServiceDate BETWEEN '"""
-        + date_start
-        + """' AND '"""
-        + date_end
-        + """'
     """
+    # UNION
+    # SELECT l.mem_id                                         AS mem_id,
+    #     l.pra_id                                            AS provider_id,
+    #     pra.spec_id                                         AS spec_id,
+    #     l.lab_ServiceDate                                   AS service_date,
+    #     'LOINC'                                             AS code_type,
+    #     LOINC.loinc_Code                                    AS code
+    # FROM """
+    #     + payer
+    #     + """.dbo.tbLab l WITH(NOLOCK)
+    #                 INNER JOIN """
+    #     + payer
+    #     + """.dbo.tbLabLOINCCPT LOINC ON l.lab_id = LOINC.lab_id
+    #         INNER JOIN #Temp tp ON tp.mem_id = l.mem_id
+    #         LEFT JOIN """
+    #     + payer
+    #     + """.dbo.tbPractitioner pra ON pra.pra_id = l.pra_id
+    #         INNER JOIN """
+    #     + payer
+    #     + """.dbo.tbFile f WITH(NOLOCK)
+    #         ON f.fil_id = l.fil_id AND f.fil_StartDate <= '"""
+    #     + file_date_lmt
+    #     + """'
+    # WHERE l.lab_ServiceDate BETWEEN '"""
+    #     + date_start
+    #     + """' AND '"""
+    #     + date_end
+    #     + """'
+    # """
     )
 
     if not just_claims:
@@ -476,9 +472,8 @@ def batch_member_codes(
             -1                                                 AS provider_id,
             -1                                                 AS spec_id,
             raps_DOSfrom                                       AS service_date,
-            CASE WHEN raps_ICD10 is NULL THEN 'ICD9DX' else 'ICD10DX' END
-                                                               AS code_type,
-            ISNULL(UPPER(raps_ICD10), UPPER(raps_ICD9))        AS code
+            'ICD10DX'                                          AS code_type,
+            UPPER(raps_ICD10)                                  AS code
         FROM """
             + payer
             + """.dbo.tbMedicareRapsReturn e WITH(NOLOCK)
@@ -489,7 +484,8 @@ def batch_member_codes(
                 ON f.fil_id = e.fil_id AND f.fil_StartDate <= '"""
             + file_date_lmt
             + """'
-        WHERE e.raps_DOSfrom BETWEEN '"""
+        WHERE raps_ICD10 IS NOT NULL
+            AND e.raps_DOSfrom BETWEEN '"""
             + date_start
             + """' AND '"""
             + date_end

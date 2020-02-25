@@ -78,19 +78,25 @@ def get_training_set(year, model):
     return codes
 
 
-def update_mappings(model):
+def update_mappings(model, sub_type_id):
     print("\nUpdating new mapping table...")
     start_time = datetime.now()
     cursor = pyodbc.connect(r"DRIVER=SQL Server;" r"SERVER=MPBWDB1;").cursor()
 
     model_name = utils.get_model_name(model)
+    if ("CMS" in model_name) and (not sub_type_id):
+        raise ValueError(
+            "When the model is CMS(MA), sub_type_id must be provided."
+        )
+
     if "CMS" in model_name:
         # fetch the mapping
         mapping_dict = cursor.execute(
             f"""
             SELECT ICDVersionind,UPPER(icd_code),cmsfh_hcccode
             FROM [CARA2_Processor].[dbo].[ModelCmsMapHccIcd]
-            WHERE mdst_ModelSubTypeID = 1 AND mv_modelversionID = {model}"""
+            WHERE mdst_ModelSubTypeID = {sub_type_id}
+                AND mv_modelversionID = {model}"""
         ).fetchall()
 
     elif "HHS" in model_name:
@@ -144,7 +150,8 @@ def update_mappings(model):
                 os.path.dirname(os.path.realpath(__file__)),
                 r"pickle_files",
                 r"mappings",
-                f"mapping_{model}",
+                f"mapping_{model}"
+                + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
             ),
             "wb",
         ),
@@ -153,7 +160,7 @@ def update_mappings(model):
     print("Time elapase: " + str(datetime.now() - start_time))
 
 
-def update_variables(codes, model):
+def update_variables(codes, model, sub_type_id):
     print("\nUpdating new variable spaces...")
     start_time = datetime.now()
     mappings = list(
@@ -163,7 +170,8 @@ def update_variables(codes, model):
                     os.path.dirname(os.path.realpath(__file__)),
                     r"pickle_files",
                     r"mappings",
-                    f"mapping_{model}",
+                    f"mapping_{model}"
+                    + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
                 ),
                 "rb",
             )
@@ -188,7 +196,8 @@ def update_variables(codes, model):
                 os.path.dirname(os.path.realpath(__file__)),
                 r"pickle_files",
                 r"variables",
-                f"variables_{model}",
+                f"variables_{model}"
+                + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
             ),
             "wb",
         ),
@@ -200,7 +209,7 @@ def update_variables(codes, model):
     print("Time elapase: " + str(datetime.now() - start_time))
 
 
-def update_ensembles(member_codes, model):
+def update_ensembles(member_codes, model, sub_type_id):
     print("\nUpdating new machine learning models...")
     start_time = datetime.now()
 
@@ -225,7 +234,8 @@ def update_ensembles(member_codes, model):
             os.path.dirname(os.path.realpath(__file__)),
             r"pickle_files",
             r"ensembles",
-            f"ensemble_{model}",
+            f"ensemble_{model}"
+            + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
         )
     ):
         os.remove(
@@ -233,7 +243,8 @@ def update_ensembles(member_codes, model):
                 os.path.dirname(os.path.realpath(__file__)),
                 r"pickle_files",
                 r"ensembles",
-                f"ensemble_{model}",
+                f"ensemble_{model}"
+                + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
             )
         )
 
@@ -243,7 +254,8 @@ def update_ensembles(member_codes, model):
                 os.path.dirname(os.path.realpath(__file__)),
                 r"pickle_files",
                 r"mappings",
-                f"mapping_{model}",
+                f"mapping_{model}"
+                + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
             ),
             "rb",
         )
@@ -255,7 +267,8 @@ def update_ensembles(member_codes, model):
                 os.path.dirname(os.path.realpath(__file__)),
                 r"pickle_files",
                 r"variables",
-                f"variables_{model}",
+                f"variables_{model}"
+                + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
             ),
             "rb",
         )
@@ -287,7 +300,8 @@ def update_ensembles(member_codes, model):
                         os.path.dirname(os.path.realpath(__file__)),
                         r"pickle_files",
                         r"ensembles",
-                        f"ensemble_{model}",
+                        f"ensemble_{model}"
+                        + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
                     ),
                     "rb",
                 )
@@ -325,7 +339,8 @@ def update_ensembles(member_codes, model):
                     os.path.dirname(os.path.realpath(__file__)),
                     r"pickle_files",
                     r"ensembles",
-                    f"ensemble_{model}",
+                    f"ensemble_{model}"
+                    + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
                 ),
                 "wb",
             ),

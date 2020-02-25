@@ -46,7 +46,8 @@ def detect_internal(
     file_date_lmt: str = None,
     mem_date_start: str = None,
     mem_date_end: str = None,
-    model: int = 63,
+    model: int = 79,
+    sub_type_id: int = None,
     mode: str = 'b',
     auto_update: bool = False,
     threshold: float = 0,
@@ -83,10 +84,13 @@ def detect_internal(
     mem_date_end : str, optional (default: None)
         as 'YYYY-MM-DD', ending date to filter memberIDs by dateInserted
 
-    model : int, optional (default: 63)
-        an integer of model version ID in
+    model : int, optional (default: 79)
+        an integer of model version ID in 
         MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only
         support 'CDPS', 'CMS' and 'HHS'
+    
+    sub_type_id : int, optional (default: None)
+        an integer of subTypeID that indicating Medicare member parts.
 
     mode : str
         one of 'r' for retrospective only, 'p' for prospective only and 'b' for
@@ -235,7 +239,7 @@ def detect_internal(
     ):
         if auto_update:
             print("Model version not exist yet! Updating...")
-            update(model, year)
+            update(model, sub_type_id ,year)
         else:
             raise FileNotFoundError(
                 f"Model version not exist! Please use `shakespeare."
@@ -265,6 +269,7 @@ def detect_internal(
             table,
             target_year=year,
             model=model,
+            sub_type_id=sub_type_id,
             mode=mode,
             auto_update=auto_update,
             threshold=threshold,
@@ -304,6 +309,7 @@ def detect_internal(
                 table,
                 target_year=year,
                 model=model,
+                sub_type_id=sub_type_id,
                 mode=mode,
                 auto_update=auto_update,
                 threshold=threshold,
@@ -468,6 +474,7 @@ def detect_api(json_body: dict):
         table,
         target_year=target_year,
         model=json_body["model_version_ID"],
+        sub_type_id=json_body["sub_type_id"],
         mode=json_body.get("mode", "b"),
         auto_update=False,
         threshold=json_body.get("threshold", 0.0),
@@ -499,7 +506,8 @@ def detect_api(json_body: dict):
 def core_ml(
     table: pd.DataFrame,
     target_year: int,
-    model: int = 63,
+    model: int = 79,
+    sub_type_id: int = None,
     mode: str = 'b',
     auto_update: bool = False,
     threshold: float = 0,
@@ -516,10 +524,13 @@ def core_ml(
     target_year : int
         target service year
 
-    model : int, optional (default: 63)
+    model : int, optional (default: 79)
         an integer of model version ID in
         MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only
         support 'CDPS', 'CMS' and 'HHS'
+
+    sub_type_id : int, optional (default: None)
+        an integer of subTypeID that indicating Medicare member parts.
 
     auto_update : boolean, optional (default: False)
         if True, and no matching model pickled, it will call `update` function
@@ -634,12 +645,13 @@ def core_ml(
             os.path.dirname(os.path.realpath(__file__)),
             r"pickle_files",
             r"ensembles",
-            f"ensemble_{model}",
+            f"ensemble_{model}"
+            + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
         )
     ):
         if auto_update:
             print("Model version not exist !")
-            update(model, datetime.now().year)
+            update(model, sub_type_id, datetime.now().year)
         else:
             raise ValueError("Model version not exist !")
 
@@ -649,7 +661,8 @@ def core_ml(
                 os.path.dirname(os.path.realpath(__file__)),
                 r"pickle_files",
                 r"variables",
-                f"variables_{model}",
+                f"variables_{model}"
+                + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
             ),
             "rb",
         )
@@ -660,7 +673,8 @@ def core_ml(
                 os.path.dirname(os.path.realpath(__file__)),
                 r"pickle_files",
                 r"mappings",
-                f"mapping_{model}",
+                f"mapping_{model}"
+                + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
             ),
             "rb",
         )
@@ -671,7 +685,8 @@ def core_ml(
                 os.path.dirname(os.path.realpath(__file__)),
                 r"pickle_files",
                 r"ensembles",
-                f"ensemble_{model}",
+                f"ensemble_{model}"
+                + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
             ),
             "rb",
         )
@@ -822,7 +837,7 @@ def core_ml(
     return final_results
 
 
-def update(model, year_of_service):
+def update(model, sub_type_id, year_of_service):
     """
     Since CARA use different ICD-HCC mappings at different service year, this
     function is for updating mappings, variable spaces and XGBoost models for
@@ -834,6 +849,9 @@ def update(model, year_of_service):
         an integer of model version ID in
         MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only
         support 'CDPS', 'CMS' and 'HHS'
+
+    sub_type_id : int, optional (default: None)
+        an integer of subTypeID that indicating Medicare member parts.
 
     year_of_service : int
         a intiger of the year of service for training data retrieval purpose
@@ -872,17 +890,17 @@ def update(model, year_of_service):
         + " ##############################"
     )
     training_set = training.get_training_set(year_of_service, model)
-    training.update_mappings(model)
-    training.update_variables(training_set, model)
-    training.update_ensembles(training_set, model)
+    training.update_mappings(model, sub_type_id)
+    training.update_variables(training_set, model, sub_type_id)
+    training.update_ensembles(training_set, model, sub_type_id)
     print(
         "############################ Finished Training Model "
-        + str(model)
+        + str(model) + f"{'_' + str(sub_type_id) if sub_type_id else ''}"
         + " ###########################"
     )
 
 
-def delete(model):
+def delete(model, sub_type_id):
     """
     Module for deleting old models to free up disk space
 
@@ -903,7 +921,8 @@ def delete(model):
             os.path.dirname(os.path.realpath(__file__)),
             r"pickle_files",
             r"ensembles",
-            "ensemble_{}".format(model),
+            f"ensemble_{model}"
+            + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
         )
     ):
         os.remove(
@@ -911,7 +930,8 @@ def delete(model):
                 os.path.dirname(os.path.realpath(__file__)),
                 r"pickle_files",
                 r"ensembles",
-                "ensemble_{}".format(model),
+                f"ensemble_{model}"
+                + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
             )
         )
     if os.path.exists(
@@ -919,7 +939,8 @@ def delete(model):
             os.path.dirname(os.path.realpath(__file__)),
             r"pickle_files",
             r"mappings",
-            "mapping_{}".format(model),
+            f"mapping_{model}"
+            + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
         )
     ):
         os.remove(
@@ -927,7 +948,8 @@ def delete(model):
                 os.path.dirname(os.path.realpath(__file__)),
                 r"pickle_files",
                 r"mappings",
-                "mapping_{}".format(model),
+                f"mapping_{model}"
+                + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
             )
         )
     if os.path.exists(
@@ -935,7 +957,8 @@ def delete(model):
             os.path.dirname(os.path.realpath(__file__)),
             r"pickle_files",
             r"variables",
-            "variables_{}".format(model),
+            f"variables_{model}"
+            + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
         )
     ):
         os.remove(
@@ -943,6 +966,7 @@ def delete(model):
                 os.path.dirname(os.path.realpath(__file__)),
                 r"pickle_files",
                 r"variables",
-                "variables_{}".format(model),
+                f"variables_{model}"
+                + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
             )
         )
