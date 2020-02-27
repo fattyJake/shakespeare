@@ -511,17 +511,26 @@ def update_code_desc():
     code_desc.update({"ICD10PX-" + c: d for c, d in icd10px_codes.items()})
 
     # NDC9
-    response = requests.get("https://www.accessdata.fda.gov/cder/ndctext.zip")
-    z = zipfile.ZipFile(io.BytesIO(response.content))
-    z.extractall()
-    ndc_codes = pd.read_csv(
-        z.open("product.txt"), sep="\t", header=0, encoding="ISO-8859-1"
-    )
-    z.close()
+    # response = requests.get("https://www.accessdata.fda.gov/cder/ndctext.zip")
+    # z = zipfile.ZipFile(io.BytesIO(response.content))
+    # z.extractall()
+    # ndc_codes = pd.read_csv(
+    #     z.open("product.txt"), sep="\t", header=0, encoding="ISO-8859-1"
+    # )
+    # z.close()
+    #
+    # ndc_codes.PRODUCTNDC = ndc_codes.PRODUCTNDC.map(ndc10_to_ndc9_product)
 
-    ndc_codes.PRODUCTNDC = ndc_codes.PRODUCTNDC.map(ndc10_to_ndc9_product)
+    sql = """
+        SELECT DISTINCT [NDC9Code], [DrugProductName]
+        FROM [Medref].[dbo].[DimNDC]
+        ORDER BY [NDC9Code]
+    """
     ndc_codes = (
-        ndc_codes.groupby("PRODUCTNDC")["NONPROPRIETARYNAME"].first().to_dict()
+        pd.read_sql_query(sql, db)
+        .groupby("NDC9Code")["DrugProductName"]
+        .first()
+        .to_dict()
     )
     code_desc.update({"NDC9-" + c: d for c, d in ndc_codes.items()})
 
