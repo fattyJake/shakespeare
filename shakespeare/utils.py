@@ -8,6 +8,7 @@
 
 import os
 import re
+import array
 import operator
 import itertools
 import gc
@@ -22,40 +23,70 @@ import requests
 from scipy.sparse import csr_matrix
 
 
-def build_member_input_vector(member_codes_found, variables):
+class Vectorizer(object):
     """
     Build sparse dummy vector based on variable list order
 
     Parameters
     --------
-    member_codes_found : list or iterable
-        list of codes for one member
-        
     varibles : list
         codes that are variables as "codetype-evidencecode"
-    
-    Return
-    --------
-    Sparse row vector of corresponding codes
 
     Examples
     --------
-    >>> from shakespeare.vectorizers import build_member_input_vector
-    >>> build_member_input_vector(['ICD10-I10'], variables)
-    <1x9974 sparse matrix of type '<class 'numpy.int32'>'
-        with 1 stored elements in Compressed Sparse Row format>
+    >>> from shakespeare.utils import Vectorizer
+    >>> vec = Vectorizer(['a', 'b', 'c'])
+    >>> vec([['a', 'b'], ['c']]).toarray()
+    array([[1, 1, 0],
+           [0, 0, 1]])
     """
-    # vectorize
-    output = np.zeros((1, len(variables)), dtype=int)
-    for i in member_codes_found:
-        if i in variables:
-            output[0, variables.index(i)] = 1
 
-    #    # append demograpic data
-    #    if dob and gender: output = np.hstack(
-    #        (output,build_demographic_vector(dob,gender))
-    #     )
-    return csr_matrix(output)
+    def __init__(self, variables):
+
+        self.variables = variables
+        self._cached_dict = None
+        d = np.int if all(isinstance(c, int) for c in variables) else object
+        self.classes_ = np.empty(len(variables), dtype=d)
+        self.classes_[:] = variables
+
+
+    def __call__(self, y):
+        """
+        Parameters
+        --------
+        iterable of iterables
+
+        Return
+        --------
+        Sparse 2D vector of corresponding codes
+        """
+        class_to_index = self._build_cache()
+        indices = array.array('i')
+        indptr = array.array('i', [0])
+        
+        for labels in y:
+            index = set()
+            for label in labels:
+                try:
+                    index.add(class_to_index[label])
+                except KeyError:
+                    pass
+            indices.extend(index)
+            indptr.append(len(indices))
+        data = np.ones(len(indices), dtype=int)
+
+        return csr_matrix(
+            (data, indices, indptr),
+            shape=(len(indptr) - 1, len(class_to_index))
+        )
+
+
+    def _build_cache(self):
+        if self._cached_dict is None:
+            self._cached_dict = dict(
+                zip(self.classes_, range(len(self.classes_)))
+            )
+        return self._cached_dict
 
 
 def preprocess_table(table, target_year):
@@ -522,15 +553,18 @@ def update_code_desc():
     # ndc_codes.PRODUCTNDC = ndc_codes.PRODUCTNDC.map(ndc10_to_ndc9_product)
 
     sql = """
-        SELECT DISTINCT [NDC9Code], [DrugProductName]
-        FROM [Medref].[dbo].[DimNDC]
-        ORDER BY [NDC9Code]
+        SELECT [ICD10ProcedureCode], [ShortDescription]
+        FROM [Medref].[dbo].[ICD10ProcedureCode]
+        ORDER BY ICD10ProcedureCode, CodeEffectiveDate DESC
     """
-    ndc_codes = (
+    icd10px_codes = (
         pd.read_sql_query(sql, db)
-        .groupby("NDC9Code")["DrugProductName"]
+        .groupby("ICD10ProcedureCode")["ShortDescription"]
         .first()
         .to_dict()
+    )
+    ndc_codes = (
+        ndc_codes.groupby("PRODUCTNDC")["NONPROPRIETARYNAME"].first().to_dict()
     )
     code_desc.update({"NDC9-" + c: d for c, d in ndc_codes.items()})
 
