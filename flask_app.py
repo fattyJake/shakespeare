@@ -47,7 +47,7 @@ def check_payload(payload, correlation_id):
         return None
 
 
-def check_model_version(model_version_ID, correlation_id, update):
+def check_model_version(model_version_ID, sub_type_id, correlation_id, update):
     if not isinstance(model_version_ID, int):
         return {
             "Request Status": "Failed",
@@ -64,7 +64,8 @@ def check_model_version(model_version_ID, correlation_id, update):
                     r"shakespeare",
                     r"pickle_files",
                     r"ensembles",
-                    f"ensemble_{model_version_ID}",
+                    f"ensemble_{model_version_ID}"
+                    + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
                 )
             )
             and update
@@ -77,7 +78,8 @@ def check_model_version(model_version_ID, correlation_id, update):
                     r"shakespeare",
                     r"pickle_files",
                     r"ensembles",
-                    f"ensemble_{model_version_ID}",
+                    f"ensemble_{model_version_ID}"
+                    + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
                 )
             )
             and update
@@ -86,8 +88,9 @@ def check_model_version(model_version_ID, correlation_id, update):
                 "Request Status": "Failed",
                 "correlation_id": correlation_id,
                 "request_api": "RiskGapTargetingService",
-                "Error Message": f'Bad request: "model_version_ID" {model_version_ID} '
-                + "already exist, no need to update.",
+                "Error Message": f'Bad request: model {model_version_ID}'
+                + f"{'_' + str(sub_type_id) if sub_type_id else ''}"
+                + " already exist, no need to update.",
             }
         elif (
             not os.path.exists(
@@ -96,7 +99,8 @@ def check_model_version(model_version_ID, correlation_id, update):
                     r"shakespeare",
                     r"pickle_files",
                     r"ensembles",
-                    f"ensemble_{model_version_ID}",
+                    f"ensemble_{model_version_ID}"
+                    + f"{'_' + str(sub_type_id) if sub_type_id else ''}",
                 )
             )
             and not update
@@ -105,7 +109,8 @@ def check_model_version(model_version_ID, correlation_id, update):
                 "Request Status": "Failed",
                 "correlation_id": correlation_id,
                 "request_api": "RiskGapTargetingService",
-                "Error Message": f'Bad request: "model_version_ID" {model_version_ID} does '
+                "Error Message": f'Bad request: model {model_version_ID}'
+                + f"{'_' + str(sub_type_id)} does "
                 + "not exist, please provide correct number or update.",
             }
         else:
@@ -153,8 +158,9 @@ def detect():
             return jsonify(error_response), 400
 
         model_version_ID = content.get("model_version_ID", "null")
+        sub_type_id = content.get("sub_type_id", None)
         error_response = check_model_version(
-            model_version_ID, correlation_id, False
+            model_version_ID, sub_type_id, correlation_id, False
         )
         if error_response:
             return jsonify(error_response), 400
@@ -169,7 +175,7 @@ def detect():
             "correlation_id": correlation_id,
             "target_year": content.get("target_year", "Not Provided"),
             "model_version_ID": model_version_ID,
-            "sub_type_id": content.get("sub_type_id", None)
+            "sub_type_id": sub_type_id,
         }
         final_results.update(detect_api(content))
 

@@ -165,10 +165,9 @@ def update_variables(codes, model, sub_type_id):
         :15000
     ]
     variables = [i[0] for i in temp]
-    vec = utils.Vectorizer(variables)
 
     pickle.dump(
-        vec,
+        variables,
         open(
             os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
@@ -239,7 +238,7 @@ def update_ensembles(member_codes, model, sub_type_id):
         )
     )
     HCCs = list(set(itertools.chain.from_iterable(mapping.values())))
-    vec = pickle.load(
+    variables = pickle.load(
         open(
             os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
@@ -259,6 +258,7 @@ def update_ensembles(member_codes, model, sub_type_id):
         )
         for mem, codes in member_codes.items()
     }
+    vec = utils.Vectorizer(variables)
     member_vectors = vec([codes for _, codes in member_codes.items()])
 
     ensemble = {

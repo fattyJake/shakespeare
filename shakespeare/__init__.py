@@ -654,7 +654,7 @@ def core_ml(
         else:
             raise ValueError("Model version not exist !")
 
-    vec = pickle.load(
+    variables = pickle.load(
         open(
             os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
@@ -719,6 +719,7 @@ def core_ml(
 
     # Vectorizing
     print("Vectoring...")
+    vec = utils.Vectorizer(variables)
     if mode in ['r', 'b']:
         vector_prior = vec(
             [
@@ -788,7 +789,7 @@ def core_ml(
                 dict_prior=dict_prior,
                 dict_current=dict_current,
                 mappings=mappings,
-                variables=vec.variables,
+                variables=variables,
             )
 
         if mode in ['p', 'b']:
@@ -802,7 +803,7 @@ def core_ml(
                 dict_prior=dict_prior,
                 dict_current=dict_current,
                 mappings=mappings,
-                variables=vec.variables,
+                variables=variables,
             )
 
         final_results = {
