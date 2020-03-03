@@ -109,6 +109,17 @@
                         "example": 63,
                         "description": "an integer of model version ID in Inovalon database MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only support CDPS, CMS and HHS"
                     },
+                    "sub_type_id": {
+                        "type": "integer",
+                        "example": 1,
+                        "enum": [
+                            1,
+                            2,
+                            3,
+                            4
+                        ],
+                        "description": "the sub type ID indicating Medicare enrollment subtypes; if it the model is not Medicare, leave it as null."
+                    },
                     "mode": {
                         "type": "string",
                         "example": "b",
@@ -186,7 +197,8 @@
                     "correlation_id": "12345",
                     "today_date": "2019-04-15",
                     "target_year": 2019,
-                    "model_version_ID": 63,
+                    "model_version_ID": 79,
+                    "sub_type_id": 1,
                     "mode": "b",
                     "threshold": 0.3,
                     "get_indicators": true,
@@ -337,6 +349,7 @@
                     "Request Status",
                     "target_year",
                     "model_version_ID",
+                    "sub_type_id",
                     "retrospective",
                     "prospective"
                 ],
@@ -354,6 +367,17 @@
                         "type": "integer",
                         "example": 63,
                         "description": "an integer of model version ID in Inovalon database MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only support CDPS, CMS and HHS"
+                    },
+                    "sub_type_id": {
+                        "type": "integer",
+                        "example": 1,
+                        "enum": [
+                            1,
+                            2,
+                            3,
+                            4
+                        ],
+                        "description": "the sub type ID indicating Medicare enrollment subtypes; if it the model is not Medicare, return null."
                     },
                     "retrospective": {
                         "type": "array",
@@ -544,7 +568,8 @@
                 "example": {
                     "Request Status": "Success",
                     "correlation_id": "12345",
-                    "model_version_ID": 63,
+                    "model_version_ID": 79,
+                    "sub_type_id": 1,
                     "prospective": [
                         {
                             "gaps": [

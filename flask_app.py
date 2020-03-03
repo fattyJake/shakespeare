@@ -169,6 +169,7 @@ def detect():
             "correlation_id": correlation_id,
             "target_year": content.get("target_year", "Not Provided"),
             "model_version_ID": model_version_ID,
+            "sub_type_id": content.get("sub_type_id", None)
         }
         final_results.update(detect_api(content))
 
