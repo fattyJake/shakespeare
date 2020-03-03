@@ -20,33 +20,10 @@ import pandas as pd
 from xgboost import XGBClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.utils import shuffle
-from scipy.sparse import csr_matrix, vstack
 
 # package libs
 from . import fetch_db
 from . import utils
-
-
-def shuffle_data(positives, negatives, member_vectors):
-    """
-    Partition whole dataset randomly into training set, development set and
-    test set (20%)
-    """
-    # Prepare ML dateset
-    y = []
-    X = []
-    for member in positives:
-        X.append(csr_matrix(member_vectors[member]))
-        y.append(1)
-
-    for member in negatives:
-        X.append(csr_matrix(member_vectors[member]))
-        y.append(0)
-    X = csr_matrix(vstack(X))
-
-    # Split dataset
-    X, y = shuffle(X, y, random_state=42)
-    return X, y
 
 
 def get_training_set(year, model):
@@ -188,9 +165,10 @@ def update_variables(codes, model, sub_type_id):
         :15000
     ]
     variables = [i[0] for i in temp]
+    vec = utils.Vectorizer(variables)
 
     pickle.dump(
-        variables,
+        vec,
         open(
             os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
@@ -261,7 +239,7 @@ def update_ensembles(member_codes, model, sub_type_id):
         )
     )
     HCCs = list(set(itertools.chain.from_iterable(mapping.values())))
-    variables = pickle.load(
+    vec = pickle.load(
         open(
             os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
@@ -281,10 +259,7 @@ def update_ensembles(member_codes, model, sub_type_id):
         )
         for mem, codes in member_codes.items()
     }
-    member_vectors = {
-        mem: utils.build_member_input_vector(codes, variables)
-        for mem, codes in member_codes.items()
-    }
+    member_vectors = vec([codes for _, codes in member_codes.items()])
 
     ensemble = {
         k: {"classifier": None, "exemplarsPOS": None, "exemplarsNEG": None}
@@ -312,17 +287,16 @@ def update_ensembles(member_codes, model, sub_type_id):
             continue
 
         # break up into training and testing
-        positives = [k for k, v in member_conditions.items() if HCC in v]
-        negatives = [k for k, v in member_conditions.items() if HCC not in v]
-        if len(positives) < 500:
+        labels = [1 if HCC in v else 0 for _, v in member_conditions.items()]
+        if sum(labels) < 500:
             continue
         print("Training " + HCC)
 
-        X_train, y_train = shuffle_data(positives, negatives, member_vectors)
+        X_train, y_train = shuffle(member_vectors, labels, random_state=42)
 
         # save information and skip classifier on low information
-        pos_train_len = len([v for v in y_train if v == 1])
-        neg_train_len = len([v for v in y_train if v == 0])
+        pos_train_len = sum(y_train)
+        neg_train_len = len(y_train) - sum(y_train)
         ensemble[HCC]["exemplarsPOS"] = pos_train_len
         ensemble[HCC]["exemplarsNEG"] = neg_train_len
 
@@ -348,7 +322,7 @@ def update_ensembles(member_codes, model, sub_type_id):
         del ensemble, X_train, y_train
         gc.collect()
 
-    del member_conditions, member_vectors, variables
+    del member_conditions, member_vectors, vec
     gc.collect()
 
     print("Time elapase: " + str(datetime.now() - start_time))

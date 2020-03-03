@@ -28,7 +28,6 @@ from datetime import datetime
 
 # data & machine learning libs
 import pandas as pd
-from scipy.sparse import csr_matrix, vstack
 
 # package libs
 from . import fetch_db
@@ -655,7 +654,7 @@ def core_ml(
         else:
             raise ValueError("Model version not exist !")
 
-    variables = pickle.load(
+    vec = pickle.load(
         open(
             os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
@@ -721,28 +720,19 @@ def core_ml(
     # Vectorizing
     print("Vectoring...")
     if mode in ['r', 'b']:
-        vector_prior = csr_matrix(
-            vstack(
-                [
-                    utils.build_member_input_vector(
-                        dict_prior.get(mem_id, {"code": []})["code"], variables
-                    )
-                    for mem_id in MEMBER_LIST
-                ]
-            )
+        vector_prior = vec(
+            [
+                dict_prior.get(mem_id, {"code": []})["code"]
+                for mem_id in MEMBER_LIST
+            ]
         )
     if mode in ['p', 'b']:
-        vector_current = csr_matrix(
-            vstack(
-                [
-                    utils.build_member_input_vector(
-                        dict_prior.get(mem_id, {"code": []})["code"]
-                        + dict_current.get(mem_id, {"code": []})["code"],
-                        variables,
-                    )
-                    for mem_id in MEMBER_LIST
-                ]
-            )
+        vector_current = vec(
+            [
+                dict_prior.get(mem_id, {"code": []})["code"]
+                + dict_current.get(mem_id, {"code": []})["code"]
+                for mem_id in MEMBER_LIST
+            ]
         )
 
     # running machine learning
@@ -798,7 +788,7 @@ def core_ml(
                 dict_prior=dict_prior,
                 dict_current=dict_current,
                 mappings=mappings,
-                variables=variables,
+                variables=vec.variables,
             )
 
         if mode in ['p', 'b']:
@@ -812,7 +802,7 @@ def core_ml(
                 dict_prior=dict_prior,
                 dict_current=dict_current,
                 mappings=mappings,
-                variables=variables,
+                variables=vec.variables,
             )
 
         final_results = {
