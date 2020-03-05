@@ -26,7 +26,7 @@ from . import fetch_db
 from . import utils
 
 
-def get_training_set(year, model):
+def get_training_set(year, model, payer="CD_Molina_New", server="CARABWDB05"):
     print("Fetching training dateset...")
     start_time = datetime.now()
     p_year = str(year - 1)
@@ -37,8 +37,8 @@ def get_training_set(year, model):
             mem_date_start = datetime(y, m, 1).strftime("%Y-%m-%d")
             mem_date_end = datetime(y, m + 1, 1).strftime("%Y-%m-%d")
             sub_codes = fetch_db.batch_member_codes(
-                payer="CD_HEALTHFIRST",
-                server="CARABWDB03",
+                payer=payer,
+                server=server,
                 date_start=p_year + "-01-01",
                 date_end=p_year + "-12-31",
                 mem_date_start=mem_date_start,
