@@ -1,25 +1,44 @@
-# shakespeare - Machine Learning for Medical Claims Retrospective Risk Adjustment
+# shakespeare - Risk Gap Detection using  Medical Claims Based on Machine Learning
 
 ## Summary
 
-**shakespeare** is a Python package for for detecting the likely conditions of a patient based on medical codes attached to that patient through the use of machine learning for risk adjustment purpose supported by [Inovalon Inc.](https://www.inovalon.com/) The package includes the entire pipelines for training and deploying, along with utilities for fetching data from Inovalon database. The models leverage wide range of medical claims, including all diagnoses and procedures as International Classification of Diseases (ICD) version 9/10 diagnosis/procedures, Current Procedural Terminology (CPT) and Healthcare Common Procedure Coding System (HCPCS), as well as medications as National Drug Code (NDC).
+**shakespeare** is a Python package for for detecting the known and likely conditions of a patient based on medical claim codes attached to that patient through the use of machine learning for risk adjustment purpose supported by [Inovalon Inc.](https://www.inovalon.com/) The package includes the entire pipelines for training and deploying, along with utilities for fetching data from Inovalon database. The models leverage wide range of medical claims, including all diagnoses and procedures as International Classification of Diseases (ICD) version 9/10 diagnosis/procedures, Current Procedural Terminology (CPT) and Healthcare Common Procedure Coding System (HCPCS), as well as medications as National Drug Code (NDC).
 
-**shakespeare** provides stable Python APIs based on [XGBoost](https://xgboost.readthedocs.io/en/latest/index.html). Keep up to date with version releases and issue reporting by
-emailing to
-[ywang2@inovalon.com](ywang2@inovalon.com) or [wkinsman@inovalon.com](wkinsman@inovalon.com).
+**shakespeare** provides stable Python APIs based on [XGBoost](https://xgboost.readthedocs.io/en/latest/index.html). Keep up to date with version releases and issue reporting by emailing to [ywang2@inovalon.com](ywang2@inovalon.com).
 
 ## Installation
 
-Before installing **shakespeare**, please install XGBoost first (highly recommend version 0.72) to avoid potential compile problems. Follow the [installation instruction](https://xgboost.readthedocs.io/en/latest/build.html) of offical guildline.
+The package depends on Python 3.4+. Before installing **shakespeare**, please install XGBoost first (highly recommend version 0.90) to avoid potential compile problems. Follow the [installation instruction](https://xgboost.readthedocs.io/en/latest/build.html) of offical guildline.
 
 To download built **shakespeare** wheel files:
 
 | Build Type      | Status | Artifacts |
 | ---             | ---    | ---       |
 | **Linux**   | [![Status](imgs/linux-build.svg)]() | [Py3 wheel](https://github.com/fattyJake/shakespeare/releases/download/2.6.0/shakespeare-2.6.0-py3-none-manylinux1_x86_64.whl) |
-| **Windows** | [![Status](imgs/win-build.svg)]() | [Py3 wheel](https://github.com/fattyJake/shakespeare/releases/download/2.6.0/shakespeare-2.6.0-py3-none-win_amd64.whl) |
+| **Windows x64** | [![Status](imgs/win-build.svg)]() | [Py3 wheel](https://github.com/fattyJake/shakespeare/releases/download/2.6.0/shakespeare-2.6.0-py3-none-win_amd64.whl) |
 
-Please
+#### Dependencies
+
+```
+gunicorn>=19.9.0
+flask>=1.1.1
+flask_swagger_ui==3.20.9
+six>=1.12.0
+pytz>=2018.9
+python_dateutil>=2.7.3
+kiwisolver>=1.0.1
+pyparsing>=2.3.1
+cycler>=0.10.0
+scipy>=1.2.0
+numpy>=1.16.1
+pandas>=0.24.1
+pyodbc>=4.0.25
+matplotlib>=3.0.2
+scikit-learn>=0.20.2
+xgboost==0.90
+shap==0.31.0
+requests>=2.22.0
+```
 
 To install on Linux machine:
 
@@ -39,68 +58,231 @@ Or install from source
 $ python setup.py install
 ```
 
+## Machine Learning Model
+
+### Training
+
+In order to generate training in a fast, easy way, we come up with an approach that only using patient claims data to train the model. Given one patient's claims codes in one service year, we find all ICD codes indicating certain HCC (directly mapped), label the patient with that HCC and using all other codes as input supporting evidences excluding directly mapped ICDs to train the model. Since each HCC (or other high level condition category) is independent to each other, we train one supervised binary classification model for each HCC individually. Take HCC111 (COPD) as example:
+
+<p align="center">
+  <img src="imgs/label_approach.png" class="center" height="300"/>
+</p>
+
+The reason we don't use Sapphire chase results to label patients (which ideally produce real model ground truth) is that logic-wise the labeling process would be too complicated and hard to automate; on the other hand the current labeling approach is much easier in term of getting training data. In practice, the logic of training one HCC suspect targeting model is:
+
+<p align="center">
+  <img src="imgs/training_logic.png" class="center" height="700"/>
+</p>
+
+### Deployment
+
+Once we have the well-trained model, we should design the model deployment logic based on risk adjustment team's need for both retrospective and prospective purposes.
+
+#### Retrospective
+
+For retrospective targeting, the package accept a table of members' data with columns mem_id, provider_id (the pra_id who filed this claim), spec_id (the specialist ID of the provider), service_date (the encounter date of the claim), code_type (only accept "ICD10DX", "CPT", "HCPCS", "NDC9", "ICD10PX" or "DRG") and the code (claim code without decimal, e.g. I10) as input. It is also necessary to provide the target year as input as well. Retrospectively, the model screen the claim codes that are only filed prior to target year as input: in these codes, those directly mapped to certain HCCs indicates **"known"** conditions, and we use the rest of the codes as input to run through ML model to generate a 0-1 probability number for each HCC as the **"suspected"** conditions:
+
+<p align="center">
+  <img src="imgs/retrospective_deployment.png" class="center" height="500"/>
+</p>
+
+#### Prospective
+
+For prospective targeting, the package accept the same data input as retrospective. Prospectively, the model uses the claim codes that are filed in prior year and target year as input. For those codes filed in target year that are directly mapped to certain HCCs, we define these HCCs as **"known_current"** conditions; for those codes filed in prior year that are directly mapped to certain HCCs **but not yet filed** in target year, we defined them as **"known_historical"**, which means we are 100% certain the member should report those HCCs (similar to the concept of UCCC); and we use the rest of the codes (both prior and target year) as input to run through ML model to generate a 0-1 probability number for each HCC as the **"suspected"** conditions:
+
+<p align="center">
+  <img src="imgs/prospective_deployment.png" class="center" height="500"/>
+</p>
+
+
 ## API Documentation
 
-### 1. deploy
+### 1. detect_internal
 
 ```python
-shakespeare.detect(
-    payer, server, memberID_list=None, date_end=None, file_date_lmt=None,
-    mem_date_start=None, mem_date_end=None, model=63, auto_update=False,
-    threshold=0, output_path=None, get_indicators=False, top_n_indicator=5
-):
+shakespeare.detect_internal(
+    payer: str,
+    server: str,
+    date_start: str,
+    date_end: str,
+    memberID_list: list = None,
+    file_date_lmt: str = None,
+    mem_date_start: str = None,
+    mem_date_end: str = None,
+    model: int = 79,
+    sub_type_id: int = None,
+    mode: str = 'b',
+    auto_update: bool = False,
+    threshold: float = 0,
+    top_n_indicator: int = 5,
+)
 ```
 
-```deploy``` main functions detects the HCCs patients may have, and supporting evidence, given a batch of patient's info.
+Wrapper of core_ml for Inovalon internal use.
 
 ##### Parameters
-* ```payer``` : str. Name of payer table (e.g. 'CD_HEALTHFIRST')
+* ```payer``` : str. Name of payer database (e.g. 'CD_HEALTHFIRST')
 * ```server``` : str. CARA server on which the payer is located ('CARABWDB03')
+* ```date_start``` : str. String as 'YYYY-MM-DD' to get claims data from
+* ```date_end``` : str. String as 'YYYY-MM-DD' to get claims data to
 * ```memberID_list``` : list, optional (default: None). List of memberIDs (e.g. [1120565]); if None, get results from all members under payer
-* ```date_start``` : str, optional (default: None). String as 'YYYY-MM-DD' to get claims data from
-* ```date_end``` : str, optional (default: None). String as 'YYYY-MM-DD' to get claims data to
 * ```file_date_lmt``` : str, optional (default: None). String as 'YYYY-MM-DD' indicating the latest file date limit of patient codes, generally at the half of one year
 * ```mem_date_start``` : str, optional (default: None). As 'YYYY-MM-DD', starting date to filter memberIDs by dateInserted
 * ```mem_date_end``` : str, optional (default: None). As 'YYYY-MM-DD', ending date to filter memberIDs by dateInserted
 * ```model``` : int, optional (default: 63). An integer of model version ID in ```MPBWDB1.CARA2_Controller.dbo.ModelVersions```; note this package only support CDPS, CMS and HHS
+* ```sub_type_id``` : int, optional (default: None). An integer of subTypeID that indicating Medicare member parts.
+* ```mode``` : str, optional (default: "b"). One of 'r' for retrospective only, 'p' for prospective only and 'b' for both.
 * ```auto_update``` : boolean, optional (default: False). If True, and no matching model pickled, it will call `update` function first
 * ```threshold``` : float, optional (default: 0). A float between 0 and 1 for filtering output confidence above it
-* ```output_path``` : str, optional (default: None). If not None, provided with the path of output EXCEL sheet to store HCC probs, financial values for all member list
-* ```get_indicators``` : boolean, optional (default: False). If False, only return probabilities for each HCC each member; if True, add supporting evidences of each member to each HCC
 * ```top_n_indicator``` : int, optional (default: 5). How many indicators to output for each member each HCC
     
 ##### Return
 
-```member_condition```: list of tuples. As format of ```[(memberID, HCC, prob, tp_flag)]``` or ```[(memberID, HCC, prob, tp_flag, top_n_codes, top_n_encounter_id, top_n_coefficient)]```
+```final_results```: dict.
+```
+{
+    'retrospective': [
+        {
+            'mem_id': int,
+            'gaps': [
+                {
+                    'condition_category': str,
+                    'confidence': float,
+                    'known': bool,
+                    *['top_indicators': list,]
+                    *['provider_id': list]
+                }
+            ]
+        }
+    ],
+    'prospective': [
+        {
+            'mem_id': int,
+            'gaps': [
+                {
+                    'condition_category': str,
+                    'confidence': float,
+                    'known_historical': bool,
+                    'known_current': bool,
+                    *['top_indicators': list,]
+                    *['provider_id': list]
+                }
+            ]
+        }
+    ]
+}
+```
 
 ##### Examples
 ```python
->>> from shakespeare import detect
->>> detect(
+>>> from shakespeare import detect_internal
+>>> detect_internal(
         payer="CD_GATEWAY",
         server="CARABWDB06",
-        date_start='2017-01-01',
-        date_end='2017-12-31',
-        threshold=0.1,
+        date_start='2018-01-01',
+        date_end='2019-04-15',
+        threshold=0.5,
         top_n_indicator=5,
-        get_indicators=True
     )
 ```
+
 ```
-    [
-        (33330, 'HCC19', 0.9041, 0.9800, 0,
-         ['HCPCS-A5500', 'CPT-82043', 'ICD10-I10', 'CPT-83036', 'ICD10-E785'],
-         [167816,174530,219484],
-         [1.4374, 0.7924, 0.4818, 0.38, 0.2694]),
+    "prospective": [
+        {
+            "mem_id": 23023,
+            "gaps": [
+                {
+                    "condition_category": "HCC55",
+                    "confidence": 0.455976,
+                    "known_current": 0,
+                    "known_historical": 0,
+                    "top_indicators": [
+                        {
+                            "code": "A0425",
+                            "code_type": "HCPCS",
+                            "provider_id": []
+                        }
+                    ]
+                },
+                ...
+            ]
+        },
         ...
-        (312068, 'HCC114', 0.6505, 0.9176, 1,
-         ['ICD10-J189', 'ICD10Proc-5A1955Z', 'ICD10-Z4682', 'CPT-99233', 'ICD10-R918'],
-         [114646, 118574, 118237, 24822, 149849, 14239],
-         [1.8562, 1.5598, 0.8454, 0.6191, 0.6101])
+    ],
+    "retrospective": [
+        {
+            "mem_id": 23023,
+            "gaps": [
+                {
+                    "condition_category": "HCC111",
+                    "confidence": 0.107791,
+                    "known": 1,
+                    "top_indicators": [
+                        {
+                            "code": "J449",
+                            "code_type": "ICD10DX",
+                            "provider_id": [
+                                505
+                            ]
+                        }
+                    ]
+                },
+                ...
+            ]
+        },
+        ...
     ]
 ```
 
-### 2. update
+### 2. detect_api
+
+```python
+shakespeare.detect_api(json_body: dict)
+```
+
+Wrapper of core_ml for external API use.
+
+##### Parameters
+* ```json_body``` : dict. The API body validated by Flask application, JSON structure details can be found in OpenAPI 3.0 documents.
+
+##### Return
+
+Same as that of ```detect_internal```.
+
+
+### 3. core_ml
+
+```python
+shakespeare.core_ml(
+    table: pandas.DataFrame,
+    target_year: int,
+    model: int = 79,
+    sub_type_id: int = None,
+    mode: str = 'b',
+    auto_update: bool = False,
+    threshold: float = 0,
+    top_n_indicator: int = 5,
+)
+```
+
+The core machine learning and logic pipeline, detects the HCCs a patient may have or already known along with supporting evidences.
+
+##### Parameters
+* ```table``` : pandas.DataFrame. A table with coulumn ```['mem_id', 'provider_id', 'spec_id', 'year', 'code']```
+* ```target_year``` : int. Target service year
+* ```model``` : int, optional (default: 63). An integer of model version ID in ```MPBWDB1.CARA2_Controller.dbo.ModelVersions```; note this package only support CDPS, CMS and HHS
+* ```sub_type_id``` : int, optional (default: None). An integer of subTypeID that indicating Medicare member parts.
+* ```mode``` : str, optional (default: "b"). One of 'r' for retrospective only, 'p' for prospective only and 'b' for both.
+* ```auto_update``` : boolean, optional (default: False). If True, and no matching model pickled, it will call `update` function first
+* ```threshold``` : float, optional (default: 0). A float between 0 and 1 for filtering output confidence above it
+* ```top_n_indicator``` : int, optional (default: 5). How many indicators to output for each member each HCC
+
+##### Return
+
+Same as that of ```detect_internal```.
+
+
+### 4. update
 
 ```python
 shakespeare.update(model, year_of_service)
@@ -110,6 +292,7 @@ Since CARA use different ICD-HCC mappings at different service year, this functi
 
 ##### Parameters
 * ```model``` : int. An integer of model version ID in ```MPBWDB1.CARA2_Controller.dbo.ModelVersions```; note this package only support CDPS, CMS and HHS
+* ```sub_type_id``` : int, optional (default: None). An integer of subTypeID that indicating Medicare member parts.
 * ```year_of_service``` : int. A intiger of the year of service for training data retrieval purpose
 
 ##### Examples
@@ -139,7 +322,7 @@ Time elapase: 05:08:24.738294
 ############################ Finished Training Model 63 ###########################
 ```
 
-### 3. delete
+### 5. delete
 
 ```
 shakespeare.delete(model)
@@ -157,17 +340,24 @@ Main funtion for deleting old models to free up disk space.
 >>> delete(63)
 ```
 
-### 4. fetch_db
+### 6. fetch_db
 
 This module contains tools for interactive with Inovalon CARA databases.
 
-#### function batch_member_codes
+#### *function* batch_member_codes
 
 ```python
 shakespeare.fetch_db.batch_member_codes(
-    payer='CD_HEALTHFIRST', server='CARABWDB03', memberIDs=None,
-    date_start=None, date_end=None, file_date_lmt=None,
-    mem_date_start=None, mem_date_end=None, model=63, get_client_id=True
+    payer: str,
+    server: str,
+    date_start: str,
+    date_end: str,
+    memberID_list: list = None,
+    file_date_lmt: str = None,
+    mem_date_start: str = None,
+    mem_date_end: str = None,
+    model: int = 63,
+    just_claims: bool = False,
 )
 ```
 
@@ -175,74 +365,180 @@ Retrieve a list of members' claim codes.
 
 ##### Parameters
 
-* ```payer``` : str. Name of payer table (e.g. 'CD_HEALTHFIRST')
+* ```payer``` : str. Name of payer database (e.g. 'CD_HEALTHFIRST')
 * ```server``` : str. CARA server on which the payer is located ('CARABWDB03')
+* ```date_start``` : str. String as 'YYYY-MM-DD' to get claims data from
+* ```date_end``` : str. String as 'YYYY-MM-DD' to get claims data to
 * ```memberID_list``` : list, optional (default: None). List of memberIDs (e.g. [1120565]); if None, get results from all members under payer
-* ```date_start``` : str, optional (default: None). String as 'YYYY-MM-DD' to get claims data from
-* ```date_end``` : str, optional (default: None). String as 'YYYY-MM-DD' to get claims data to
 * ```file_date_lmt``` : str, optional (default: None). String as 'YYYY-MM-DD' indicating the latest file date limit of patient codes, generally at the half of one year
 * ```mem_date_start``` : str, optional (default: None). As 'YYYY-MM-DD', starting date to filter memberIDs by dateInserted
 * ```mem_date_end``` : str, optional (default: None). As 'YYYY-MM-DD', ending date to filter memberIDs by dateInserted
 * ```model``` : int, optional (default: 63). An integer of model version ID in ```MPBWDB1.CARA2_Controller.dbo.ModelVersions```; note this package only support CDPS, CMS and HHS
-* ```get_client_id``` : boolean, optional (default: True). Whether return member client IDs
+* ```just_claims``` : bool, optional (default: False). If True, results will exclude MRR and RAPS returns
+
 
 ##### Return
 
-```member_codes```: list of tuples. As ```(mem_id, mem_clientMemberID, encounter_id, code)```
+* ```table``` : pandas.DataFrame. A table with coulumn ```['mem_id', 'provider_id', 'spec_id', 'year', 'code']```
 
 ##### Examples
 ```python
 >>> from shakespeare.fetch_db import batch_member_codes
->>> batch_member_codes("CD_HEALTHFIRST", memberIDs=[1120565])
+>>> df = batch_member_codes("CD_HEALTHFIRST", "CARABWDB03", "2019-01-01", "2019-12-31", memberID_list=[1120565])
+>>> df.head()
 ```
 ```
-[(1120565, '130008347', 'ICD9-4011'),
- (1120565, '130008347', 'CPT-73562'),
- ...
- (1120565, '130008347', 'CPT-92012'),
- (1120565, '130008347', 'ICD9-78659')]
+    mem_id  provider_id  spec_id service_date            code
+0  1120565          NaN      NaN   2019-01-28  NDC9-001680054
+1  1120565          NaN      NaN   2019-01-28  NDC9-516721275
+2  1120565          NaN      NaN   2019-01-28  NDC9-516721300
+3  1120565          NaN      NaN   2019-01-29  NDC9-000540018
+4  1120565          NaN      NaN   2019-01-29  NDC9-000544297
 ```
 
-### 5. vectorizers
+### 7. utils
 
-This module contains tools for patient vectorizing.
+This module contains tools for vectorizing and other data manipulating process.
 
-#### function build_member_input_vector
+#### *class* Vectorizer
 
 ```python
-shakespeare.vectorizers.build_member_input_vector(member_codes_found, variables)
+shakespeare.utils.Vectorizer(variables)
 ```
 
-Convert patient claim codes into sparse vector
+Rapidly build sparse dummy vector based on variable list order.
 
-##### Parameters
+##### \_\_init\_\_ Parameters
 
-* ```member_codes_found``` : list or iterable. List of codes for one member
-* ```varibles``` : list. Codes that are variables as "codetype-evidencecode"
+* ```variables``` : list. Codes that are variables as "codetype-evidencecode"
 
-##### Return
+##### \_\_call\_\_ Parameters
+
+* ```y``` : iterable of iterables. Iterables of member variable lists.
+
+##### \_\_call\_\_ Return
 
 ```member_vector```: csr_matrix. Sparse row vector of corresponding codes
 
 ##### Examples
 ```python
->>> from shakespeare.vectorizers import build_member_input_vector
->>> build_member_input_vector(['ICD10-I10', 'CPT-99213'], variables)
+>>> from shakespeare.utils import Vectorizer
+>>> vec = Vectorizer(['a', 'b', 'c'])
+>>> vec([['a', 'b'], ['c']]).toarray()
 ```
 ```
-<1x9974 sparse matrix of type '<class 'numpy.int32'>'
-    with 1 stored elements in Compressed Sparse Row format>
+array([[1, 1, 0],
+       [0, 0, 1]])
 ```
 
-### 6. visualization
+#### *function* preprocess_table
+
+```python
+shakespeare.utils.preprocess_table(table, target_year)
+```
+
+Preprocess DataFrame of raw data: specialists filtering and divide table into prior period and current periord as form of grouped dictionary.
+
+##### Parameters
+
+* ```table``` : pandas.DataFrame. A table with coulumn ['mem_id', 'provider_id', 'spec_id', 'service_date', 'code']
+* ```target_year``` : int. Target service year
+
+
+##### Return
+
+* ```dict_prior``` : ```{mem_id: {"code": [], "provider_id": []}}```
+* ```dict_current``` : ```{mem_id: {"code": [], "provider_id": []}}```
+
+
+#### *function* run_ml
+
+```python
+shakespeare.utils.run_ml(ensemble: dict, MEMBER_LIST: list, vector: csr_matrix)
+```
+
+ML process and post-processing.
+
+##### Parameters
+
+* ```ensemble``` : dict. ML condition_category classifier dict  
+* ```MEMBER_LIST``` : list. Fixed order of member ID list
+* ```vector``` : scipy.sparse.csr_matrix. ML input sparse matrix
+
+##### Return
+
+* ```df_condition``` : pd.DataFrame. Table with column ```['mem_id', 'condition_category', 'confidence', *['known'], *[,'known_current', 'known_historical']]```
+
+
+
+#### *function* get_indicators
+
+```python
+shakespeare.utils.get_indicators(
+    ensemble: dict,
+    MEMBER_LIST: list,
+    condition: pandas.DataFrame,
+    vector: csr_matrix,
+    top_n_indicator: int,
+    dict_prior: dict,
+    dict_current: dict,
+    mappings: dict,
+    variables: list,
+)
+```
+
+ML process and post-processing.
+
+##### Parameters
+
+* ```ensemble``` : dict. ML HCC classifier dict
+* ```MEMBER_LIST``` : list. Fixed order of member ID list
+* ```condition``` : pandas.DataFrame. Table with column ```['mem_id', 'condition_category', 'confidence', *['known'], *[,'known_current', 'known_historical']]```
+* ```vector``` : scipy.sparse.csr_matrix. ML input sparse matrix
+* ```top_n_indicator``` : int. How many indicators to output for each member each HCC
+* ```dict_prior``` : dict. Prior codes and pra_ids from `preprocess_table`
+* ```dict_current``` : dict. Current codes and pra_ids from `preprocess_table`
+* ```mappings``` : dict. Mappings from ICDs to HCCs
+* ```variables``` : list. ML variables space
+
+##### Return
+
+* ```results``` : list
+```
+[
+    {
+        'mem_id': int,
+        'gaps': [
+            {
+                'condition_category': str,
+                'confidence': float,
+                'known': bool,
+                *['uccc': bool,]
+                'top_indicators': list,
+                'provider_id': list
+            }
+        ]
+    }
+]
+```
+
+
+### 8. visualization
 
 This module contains tools for plot classification model performance.
 
-#### function plot_coefficients
+#### *function* plot_coefficients
 
 ```python
 shakespeare.visualizations.plot_coefficients(
-    classifier,variables,name,n=50,bottom=False,save_name=None
+    model,
+    variables,
+    name,
+    shap_mode=False,
+    shap_set=None,
+    n=50,
+    bottom=False,
+    save_name=None
 )
 ```
 
@@ -269,10 +565,10 @@ Bar plot with feature importance of the model.
 >>> plot_coefficients(xgb, variables, name='HCC22', n=100)
 ```
 <p align="center">
-  <img src="imgs/63/HCC22_coef.png" class="center" height="600"/>
+  <img src="imgs/79_1/HCC22_coef.png" class="center" height="600"/>
 </p>
 
-#### function plot_performance
+#### *function* plot_performance
 
 ```python
 enid.visualizations.plot_performance(out_true, out_pred, save_name=None)
@@ -297,10 +593,10 @@ enid.visualizations.plot_performance(out_true, out_pred, save_name=None)
 >>> plot_performance(y_true, y_prob, "HCC19.png")
 ```
 <p align="center">
-  <img src="imgs/63/HCC19.png" class="center" height="170"/>
+  <img src="imgs/79_1/HCC19.png" class="center" height="170"/>
 </p>
 
-#### function plot_comparison
+#### *function* plot_comparison
 
 ```python
 shakespeare.visualizations.plot_comparison(
@@ -330,7 +626,7 @@ shakespeare.visualizations.plot_comparison(
   <img src="imgs/lg_vs_xgb.png" class="center" height="200"/>
 </p>
 
-#### function plot_numerics
+#### *function* plot_numerics
 
 ```python
 shakespeare.visualizations.plot_numerics(out_true, out_pred, log=False, save_name=None)
@@ -351,7 +647,7 @@ shakespeare.visualizations.plot_numerics(out_true, out_pred, log=False, save_nam
 ```
 
 <p align="center">
-  <img src="imgs/63/risk_score.png" class="center" height="500"/>
+  <img src="imgs/79_1/risk_score.png" class="center" height="500"/>
 </p>
 
 ## For more information

@@ -58,7 +58,7 @@ def detect_internal(
     Parameters
     --------
     payer : str
-        name of payer table (e.g. 'CD_HEALTHFIRST')
+        name of payer database (e.g. 'CD_HEALTHFIRST')
 
     server : str
         CARA server on which the payer is located ('CARABWDB03')
@@ -91,7 +91,7 @@ def detect_internal(
     sub_type_id : int, optional (default: None)
         an integer of subTypeID that indicating Medicare member parts.
 
-    mode : str
+    mode : str, optional (default: "b")
         one of 'r' for retrospective only, 'p' for prospective only and 'b' for
         both.
 
@@ -518,7 +518,8 @@ def core_ml(
     Parameters
     --------
     table : pandas.DataFrame
-        a table with coulumn ['mem_id', 'provider_id', 'spec_id', 'year', 'code']
+        a table with coulumn ['mem_id', 'provider_id', 'spec_id', 'year',
+        'code']
 
     target_year : int
         target service year
@@ -530,6 +531,10 @@ def core_ml(
 
     sub_type_id : int, optional (default: None)
         an integer of subTypeID that indicating Medicare member parts.
+
+    mode : str, optional (default: "b")
+        one of 'r' for retrospective only, 'p' for prospective only and 'b' for
+        both.
 
     auto_update : boolean, optional (default: False)
         if True, and no matching model pickled, it will call `update` function
@@ -618,8 +623,8 @@ def core_ml(
                         {
                             "condition_category": "HCC188",
                             "confidence": 0.98871,
-                            "known": 0,
-                            "uccc": 1,
+                            "known_historical": 0,
+                            "known_current": 1,
                             "top_indicators": [
                                 "ICD10DX-K9423",
                                 "ICD10DX-K9429",

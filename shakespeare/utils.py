@@ -161,7 +161,7 @@ def run_ml(ensemble: dict, MEMBER_LIST: list, vector: csr_matrix):
         ML condition_category classifier dict
         
     MEMBER_LIST : list
-        fized order of member ID list
+        fixed order of member ID list
     
     vector : scipy.sparse.csr_matrix
         ML input sparse matrix
@@ -215,7 +215,7 @@ def get_indicators(
         ML HCC classifier dict
         
     MEMBER_LIST : list
-        fized order of member ID list
+        fixed order of member ID list
     
     condition : pandas.DataFrame
         table with column ['mem_id', 'condition_category', 'confidence', 'known' *[,'uccc']]

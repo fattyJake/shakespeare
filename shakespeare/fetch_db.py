@@ -86,15 +86,15 @@ def batch_member_codes(
     Parameters
     --------
     payer : str
-        name of payer table (e.g. 'CD_HEALTHFIRST')
+        name of payer database (e.g. 'CD_HEALTHFIRST')
 
     server : str
         CARA server on which the payer is located ('CARABWDB03')
 
-    date_start : str, optional (default: None)
+    date_start : str
         string as 'YYYY-MM-DD' to get claims data from
 
-    date_end : str, optional (default: None)
+    date_end : str
         string as 'YYYY-MM-DD' to get claims data to
 
     memberID_list : list, optional (default: None)
@@ -117,21 +117,31 @@ def batch_member_codes(
         support 'CDPS', 'CMS' and 'HHS'
     
     just_claims : bool, optional (default: False)
-        if True, results will eliminate MRR and RAPS returns
+        if True, results will exclude MRR and RAPS returns
 
     Return
     --------
-    List of tuples (mem_id, provider_id, spec_id, Code)
+    table : pandas.DataFrame
+        A table with coulumn ['mem_id', 'provider_id', 'spec_id', 'year',
+        'code']
 
     Examples
     --------
     >>> from shakespeare.fetch_db import batch_member_codes
-    >>> batch_member_codes("CD_HEALTHFIRST", memberID_list=[1120565])
-    [(1120565, '130008347', 'ICD9DX-4011'),
-     (1120565, '130008347', 'CPT-73562'),
-     ...
-     (1120565, '130008347', 'CPT-92012'),
-     (1120565, '130008347', 'ICD9DX-78659')]
+    >>> df = batch_member_codes(
+            "CD_HEALTHFIRST",
+            "CARABWDB03",
+            "2019-01-01",
+            "2019-12-31",
+            memberID_list=[1120565]
+        )
+    >>> df.head()
+        mem_id  provider_id  spec_id service_date            code
+    0  1120565          NaN      NaN   2019-01-28  NDC9-001680054
+    1  1120565          NaN      NaN   2019-01-28  NDC9-516721275
+    2  1120565          NaN      NaN   2019-01-28  NDC9-516721300
+    3  1120565          NaN      NaN   2019-01-29  NDC9-000540018
+    4  1120565          NaN      NaN   2019-01-29  NDC9-000544297
     """
 
     # initialize
