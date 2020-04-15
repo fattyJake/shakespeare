@@ -201,7 +201,6 @@
                     "sub_type_id": 1,
                     "mode": "b",
                     "threshold": 0.3,
-                    "get_indicators": true,
                     "top_n_indicator": 5,
                     "payload": [
                         {
