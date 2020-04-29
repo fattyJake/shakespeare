@@ -63,7 +63,7 @@ class Vectorizer(object):
         class_to_index = self._build_cache()
         indices = array.array('i')
         indptr = array.array('i', [0])
-        
+
         for labels in y:
             index = set()
             for label in labels:
@@ -89,6 +89,24 @@ class Vectorizer(object):
         return self._cached_dict
 
 
+def fast_groupby(table, k_cols, v_cols, agg=lambda x: x.tolist()):
+    table = table[k_cols + v_cols]
+    arr = table.sort_values(k_cols).values.T
+    keys, values = np.split(arr, [len(k_cols)], axis=0)
+    keys = keys.astype(int)
+    ukeys, index = np.unique(keys, True, axis=1)
+    arr = np.split(values, index[1:], axis=1)
+    return pd.concat(
+        [
+            pd.DataFrame(ukeys.T, columns=k_cols)]
+            + [
+                pd.DataFrame({c: [agg(a[i]) for a in arr]})
+                for i, c in enumerate(v_cols)
+            ],
+        axis=1
+    )
+
+
 def preprocess_table(table, target_year):
     """
     Preprocess DataFrame of raw data: specialists filtering and divide table
@@ -97,12 +115,12 @@ def preprocess_table(table, target_year):
     Parameters
     --------
     table : pandas.DataFrame
-        a table with coulumn ['mem_id', 'provider_id', 'spec_id', 'service_date',
+        a table with coulumn ['mem_id', 'provider_id', 'spec_id', 'year',
         'code']
-        
+
     target_year : int
         target service year
-    
+
     Return
     --------
     dict_prior, dict_current
@@ -117,29 +135,24 @@ def preprocess_table(table, target_year):
         209, 210, 215, 221, 222, 224, 233, 234, 237, -1,
     }
 
+    codes = table.code.unique().tolist()
+    codes_dict = dict(enumerate(codes))
+    codes_reverse_dict = {c: i for i, c in codes_dict.items()}
+
     table["provider_id"] = table["provider_id"].fillna(-1)
     table["spec_id"] = table["spec_id"].fillna(-1)
-    table = (
-        table.groupby(["mem_id", "year", "code"])["provider_id", "spec_id"]
-        .agg(list)
-        .reset_index()
+    table["provider_id"][~table["spec_id"].isin(SPECIALISTS)] = -1
+
+    # indexing codes
+    table.code = table.code.map(lambda x: codes_reverse_dict[x])
+    table = fast_groupby(
+        table,
+        ["mem_id", "year", "code"],
+        ["provider_id"],
+        agg=lambda x: x[x > -1].tolist()
     )
-    table["spec_id"] = table["spec_id"].map(
-        lambda x: [spec in SPECIALISTS for spec in x]
-    )
-    table["provider_id"] = table.apply(
-        lambda x: [
-            int(pra)
-            for i, pra in enumerate(x["provider_id"])
-            if x["spec_id"][i]
-        ],
-        axis=1,
-    )
-    table = (
-        table.groupby(["mem_id", "year"])["code", "provider_id"]
-        .agg(list)
-        .reset_index()
-    )
+    table.code = table.code.map(lambda x: codes_dict[x])
+    table = fast_groupby(table, ["mem_id", "year"], ["code", "provider_id"])
 
     return (
         table.loc[table.year < target_year, ["mem_id", "code", "provider_id"]]
@@ -159,13 +172,13 @@ def run_ml(ensemble: dict, MEMBER_LIST: list, vector: csr_matrix):
     --------
     ensemble : dict
         ML condition_category classifier dict
-        
+
     MEMBER_LIST : list
         fixed order of member ID list
-    
+
     vector : scipy.sparse.csr_matrix
         ML input sparse matrix
-    
+
     Return
     --------
     df_condition : pd.DataFrame
@@ -213,31 +226,31 @@ def get_indicators(
     --------
     ensemble : dict
         ML HCC classifier dict
-        
+
     MEMBER_LIST : list
         fixed order of member ID list
-    
+
     condition : pandas.DataFrame
         table with column ['mem_id', 'condition_category', 'confidence', 'known' *[,'uccc']]
-    
+
     vector : scipy.sparse.csr_matrix
         ML input sparse matrix
-    
+
     top_n_indicator : int
         how many indicators to output for each member each HCC
-    
+
     dict_prior : dict
         prior codes and pra_ids from `preprocess_table`
 
     dict_current : dict
         current codes and pra_ids from `preprocess_table`
-    
+
     mappings : dict
         mappings from ICDs to HCCs
 
     variables : list
         ML variables space
-    
+
     Return
     --------
     results : list
@@ -415,7 +428,7 @@ def get_model_name(model):
         """
         SELECT [mv_ModelVersionName]
         FROM [CARA2_Controller].[dbo].[ModelVersions]
-        WHERE mv_IsActive=1 
+        WHERE mv_IsActive=1
         AND mv_ModelVersionID = {}""".format(
             model
         )
@@ -454,7 +467,7 @@ def update_code_desc():
 
     # DRG
     sql = """
-        DECLARE @MAX_VERSION INT = 
+        DECLARE @MAX_VERSION INT =
             (SELECT MAX(DRGVersion)
              FROM [Medref].[dbo].[DRG]);
         SELECT [DRGCode], [Description]
@@ -563,7 +576,7 @@ def update_code_desc():
         z.open("product.txt"), sep="\t", header=0, encoding="ISO-8859-1"
     )
     z.close()
-    
+
     ndc_codes_2.PRODUCTNDC = ndc_codes_2.PRODUCTNDC.map(ndc10_to_ndc9_product)
     ndc_codes_2.NONPROPRIETARYNAME = ndc_codes_2.NONPROPRIETARYNAME.str.lower()
     ndc_codes_2 = (

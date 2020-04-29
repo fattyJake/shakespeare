@@ -22,7 +22,6 @@
 import os
 import pickle
 import itertools
-import operator
 import gc
 from datetime import datetime
 
@@ -84,10 +83,10 @@ def detect_internal(
         as 'YYYY-MM-DD', ending date to filter memberIDs by dateInserted
 
     model : int, optional (default: 79)
-        an integer of model version ID in 
+        an integer of model version ID in
         MPBWDB1.CARA2_Controller.dbo.ModelVersions; note this package only
         support 'CDPS', 'CMS' and 'HHS'
-    
+
     sub_type_id : int, optional (default: None)
         an integer of subTypeID that indicating Medicare member parts.
 
@@ -423,13 +422,17 @@ def detect_api(json_body: dict):
         }
     """
 
-    table = []
-    for member_codes in json_body["payload"]:
-        sub_table = pd.DataFrame(member_codes["codes"])
-        sub_table["mem_id"] = member_codes["mem_id"]
-        table.append(sub_table)
-
-    table = pd.concat(table, axis=0)
+    table = pd.DataFrame(
+        itertools.chain(
+            *[
+                [
+                    {**{'mem_id': member_codes['mem_id']}, **c}
+                    for c in member_codes['codes']
+                ]
+                for member_codes in json_body["payload"]
+            ]
+        )
+    )
 
     # check code_type
     unique_code_type = list(table.code_type.unique())
@@ -438,12 +441,10 @@ def detect_api(json_body: dict):
         for ct in unique_code_type
         if ct
         not in [
-            "ICD9DX",
             "ICD10DX",
             "CPT",
             "HCPCS",
             "NDC9",
-            "ICD9PX",
             "ICD10PX",
             "DRG",
         ]
@@ -464,9 +465,7 @@ def detect_api(json_body: dict):
         str(y) for y in unique_service_years if y > target_year
     ]
 
-    table["code"] = table.apply(
-        lambda row: f"{row['code_type']}-{row['code']}", axis=1
-    )
+    table['code'] = table.code_type + "-" + table.code
     table = table[["mem_id", "provider_id", "spec_id", "year", "code"]]
 
     final_results = core_ml(
@@ -837,7 +836,7 @@ def update(model, sub_type_id, year_of_service):
     """
     Since CARA use different ICD-HCC mappings at different service year, this
     function is for updating mappings, variable spaces and XGBoost models for
-    all lines of business. 
+    all lines of business.
 
     Parameters
     --------
