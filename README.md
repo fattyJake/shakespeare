@@ -88,7 +88,7 @@ For retrospective targeting, the package accept a table of members' data with co
 
 #### Prospective
 
-For prospective targeting, the package accept the same data input as retrospective. Prospectively, the model uses the claim codes that are filed in prior year and target year as input. For those codes filed in target year that are directly mapped to certain HCCs, we define these HCCs as **"known_current"** conditions; for those codes filed in prior year that are directly mapped to certain HCCs **but not yet filed** in target year, we defined them as **"known_historical"**, which means we are 100% certain the member should report those HCCs (similar to the concept of UCCC); and we use the rest of the codes (both prior and target year) as input to run through ML model to generate a 0-1 probability number for each HCC as the **"suspected"** conditions:
+For prospective targeting, the package accept the same data input as retrospective. Prospectively, the model uses the claim codes that are filed in prior year and target year as input. For those codes filed in target year that are directly mapped to certain HCCs, we define these HCCs as **"known_current"** conditions; for those codes filed in prior year that are directly mapped to certain HCCs, we defined them as **"known_historical"**. Note that if known_historical = 1 **AND** known_current = 0, it means we are 100% certain the member should report those HCCs (similar to the concept of UCCC); and we use the rest of the codes (both prior and target year) as input to run through ML model to generate a 0-1 probability number for each HCC as the **"suspected"** conditions:
 
 <p align="center">
   <img src="imgs/prospective_deployment.png" class="center" height="500"/>
