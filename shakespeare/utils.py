@@ -423,7 +423,7 @@ def df_to_json(condition):
 
 def get_model_name(model):
     # build model dictionary
-    cursor = pyodbc.connect(r"DRIVER=SQL Server;" r"SERVER=MPBWDB1;").cursor()
+    cursor = pyodbc.connect(r"DRIVER=ODBC Driver 17 for SQL Server;" r"SERVER=MPBWDB1;" r"Trusted_Connection=yes;").cursor()
     model_name = cursor.execute(
         """
         SELECT [mv_ModelVersionName]
@@ -448,7 +448,7 @@ def get_model_name(model):
 
 
 def update_code_desc():
-    db = pyodbc.connect(r"DRIVER=SQL Server;" r"SERVER=MPBWDB1;")
+    db = pyodbc.connect(r"DRIVER=ODBC Driver 17 for SQL Server;" r"SERVER=MPBWDB1;" r"Trusted_Connection=yes;")
 
     code_desc = {}
     # CPT

@@ -26,7 +26,7 @@ from . import fetch_db
 from . import utils
 
 
-def get_training_set(year, model, payer="CD_Molina_New", server="CARABWDB05"):
+def get_training_set(year, model, payer="CD_WellPoint", server="CARABWDB06"):
     print("Fetching training dateset...")
     start_time = datetime.now()
     p_year = str(year - 1)
@@ -58,7 +58,7 @@ def get_training_set(year, model, payer="CD_Molina_New", server="CARABWDB05"):
 def update_mappings(model, sub_type_id):
     print("\nUpdating new mapping table...")
     start_time = datetime.now()
-    cursor = pyodbc.connect(r"DRIVER=SQL Server;" r"SERVER=MPBWDB1;").cursor()
+    cursor = pyodbc.connect(r"DRIVER=ODBC Driver 17 for SQL Server;" r"SERVER=MPBWDB1;" r"Trusted_Connection=yes;").cursor()
 
     model_name = utils.get_model_name(model)
     if ("CMS" in model_name) and (not sub_type_id):
