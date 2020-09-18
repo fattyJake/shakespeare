@@ -1,61 +1,60 @@
 {
     "correlation_id": "12345",
-    "today_date": "2019-04-15",
-    "target_year": 2019,
-    "model_version_ID": 79,
+    "today_date": "2020-04-15",
+    "target_year": 2020,
+    "model_version_ID": 90,
     "sub_type_id": 1,
     "mode": "b",
     "threshold": 0.3,
-    "get_indicators": true,
     "top_n_indicator": 5,
     "payload": [
         {
             "mem_id": 23023,
             "codes": [
                 {
-                    "service_date": "2018-08-24",
+                    "service_date": "2019-08-24",
                     "code_type": "ICD10DX",
                     "code": "J449",
                     "provider_id": 505,
                     "spec_id": 87
                 },
                 {
-                    "service_date": "2018-10-11",
+                    "service_date": "2019-10-11",
                     "code_type": "ICD10PX",
                     "code": "0JB70ZZ",
                     "provider_id": 505,
                     "spec_id": 87
                 },
                 {
-                    "service_date": "2019-02-09",
+                    "service_date": "2020-02-09",
                     "code_type": "HCPCS",
                     "code": "A0425",
                     "provider_id": 24481,
                     "spec_id": 12
                 },
                 {
-                    "service_date": "2019-02-21",
+                    "service_date": "2020-02-21",
                     "code_type": "CPT",
                     "code": "99309",
                     "provider_id": 2576568,
                     "spec_id": 66
                 },
                 {
-                    "service_date": "2019-03-28",
+                    "service_date": "2020-03-28",
                     "code_type": "NDC9",
                     "code": "004870201",
                     "provider_id": 2576568,
                     "spec_id": 66
                 },
                 {
-                    "service_date": "2018-09-28",
+                    "service_date": "2019-09-28",
                     "code_type": "ICD10DX",
                     "code": "I214",
                     "provider_id": 317793,
                     "spec_id": 59
                 },
                 {
-                    "service_date": "2019-02-28",
+                    "service_date": "2020-02-28",
                     "code_type": "ICD10DX",
                     "code": "E119",
                     "provider_id": 492195,
@@ -67,77 +66,77 @@
             "mem_id": 51620,
             "codes": [
                 {
-                    "service_date": "2019-02-19",
+                    "service_date": "2020-02-19",
                     "code_type": "ICD10DX",
                     "code": "H8112",
                     "provider_id": 80448,
                     "spec_id": 157
                 },
                 {
-                    "service_date": "2018-04-18",
+                    "service_date": "2019-04-18",
                     "code_type": "HCPCS",
                     "code": "E0747",
                     "provider_id": 81628,
                     "spec_id": 58
                 },
                 {
-                    "service_date": "2018-04-18",
+                    "service_date": "2019-04-18",
                     "code_type": "ICD10DX",
                     "code": "S82846K",
                     "provider_id": 81628,
                     "spec_id": 58
                 },
                 {
-                    "service_date": "2018-01-01",
+                    "service_date": "2019-01-01",
                     "code_type": "HCPCS",
                     "code": "S9325",
                     "provider_id": 82584,
                     "spec_id": 85
                 },
                 {
-                    "service_date": "2018-07-27",
+                    "service_date": "2019-07-27",
                     "code_type": "CPT",
                     "code": "99221",
                     "provider_id": 466581,
                     "spec_id": 95
                 },
                 {
-                    "service_date": "2018-07-18",
+                    "service_date": "2019-07-18",
                     "code_type": "ICD10DX",
                     "code": "M545",
                     "provider_id": 2558344,
                     "spec_id": 27
                 },
                 {
-                    "service_date": "2018-12-07",
+                    "service_date": "2019-12-07",
                     "code_type": "NDC9",
                     "code": "651620698",
                     "provider_id": 2576965,
                     "spec_id": 66
                 },
                 {
-                    "service_date": "2018-10-25",
+                    "service_date": "2019-10-25",
                     "code_type": "ICD10DX",
                     "code": "E119",
                     "provider_id": 29061,
                     "spec_id": 87
                 },
                 {
-                    "service_date": "2018-04-23",
+                    "service_date": "2019-04-23",
                     "code_type": "ICD10DX",
                     "code": "D709",
                     "provider_id": 22128,
                     "spec_id": 87
                 },
                 {
-                    "service_date": "2018-01-01",
+                    "service_date": "2019-01-01",
                     "code_type": "ICD10DX",
                     "code": "J156",
                     "provider_id": 45060,
                     "spec_id": 85
                 },
                 {
-                    "service_date": "2019-02-16",
+                    "service_date": "2020-02-16",
                     "code_type": "ICD10DX",
                     "code": "J156",
                     "provider_id": 45060,

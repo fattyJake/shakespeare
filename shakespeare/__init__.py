@@ -115,6 +115,7 @@ def detect_internal(
                 'gaps': [
                     {
                         'condition_category': str,
+                        'condition_description': str,
                         'confidence': float,
                         'known': bool,
                         *['top_indicators': list,]
@@ -129,6 +130,7 @@ def detect_internal(
                 'gaps': [
                     {
                         'condition_category': str,
+                        'condition_description': str,
                         'confidence': float,
                         'known': bool,
                         'uccc': bool,
@@ -159,6 +161,7 @@ def detect_internal(
                     "gaps": [
                         {
                             "condition_category": "HCC188",
+                            "condition_description": "Artificial Openings for Feeding or Elimination",
                             "confidence": 0.990729,
                             "known": 1,
                             "top_indicators": [
@@ -182,6 +185,7 @@ def detect_internal(
                     "gaps": [
                         {
                             "condition_category": "HCC188",
+                            "condition_description": "Artificial Openings for Feeding or Elimination",
                             "confidence": 0.98871,
                             "known": 0,
                             "uccc": 1,
@@ -341,6 +345,7 @@ def detect_api(json_body: dict):
                 'gaps': [
                     {
                         'condition_category': str,
+                        'condition_description': str,
                         'confidence': float,
                         'known': bool,
                         *['top_indicators': list,]
@@ -355,6 +360,7 @@ def detect_api(json_body: dict):
                 'gaps': [
                     {
                         'condition_category': str,
+                        'condition_description': str,
                         'confidence': float,
                         'known': bool,
                         'uccc': bool,
@@ -378,6 +384,7 @@ def detect_api(json_body: dict):
                     "gaps": [
                         {
                             "condition_category": "HCC188",
+                            "condition_description": "Artificial Openings for Feeding or Elimination",
                             "confidence": 0.990729,
                             "known": 1,
                             "top_indicators": [
@@ -401,6 +408,7 @@ def detect_api(json_body: dict):
                     "gaps": [
                         {
                             "condition_category": "HCC188",
+                            "condition_description": "Artificial Openings for Feeding or Elimination",
                             "confidence": 0.98871,
                             "known": 0,
                             "uccc": 1,
@@ -556,6 +564,7 @@ def core_ml(
                 'gaps': [
                     {
                         'condition_category': str,
+                        'condition_description': str,
                         'confidence': float,
                         'known': bool,
                         *['top_indicators': list,]
@@ -570,6 +579,7 @@ def core_ml(
                 'gaps': [
                     {
                         'condition_category': str,
+                        'condition_description': str,
                         'confidence': float,
                         'known': bool,
                         'uccc': bool,
@@ -598,6 +608,7 @@ def core_ml(
                     "gaps": [
                         {
                             "condition_category": "HCC188",
+                            "condition_description": "Artificial Openings for Feeding or Elimination",
                             "confidence": 0.990729,
                             "known": 1,
                             "top_indicators": [
@@ -621,6 +632,7 @@ def core_ml(
                     "gaps": [
                         {
                             "condition_category": "HCC188",
+                            "condition_description": "Artificial Openings for Feeding or Elimination",
                             "confidence": 0.98871,
                             "known_historical": 0,
                             "known_current": 1,

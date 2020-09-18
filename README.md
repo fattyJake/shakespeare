@@ -147,6 +147,7 @@ Wrapper of core_ml for Inovalon internal use.
             'gaps': [
                 {
                     'condition_category': str,
+                    'condition_description': str,
                     'confidence': float,
                     'known': bool,
                     *['top_indicators': list,]
@@ -161,9 +162,10 @@ Wrapper of core_ml for Inovalon internal use.
             'gaps': [
                 {
                     'condition_category': str,
+                    'condition_description': str,
                     'confidence': float,
-                    'known_historical': bool,
-                    'known_current': bool,
+                    'known': bool,
+                    'uccc': bool,
                     *['top_indicators': list,]
                     *['provider_id': list]
                 }
@@ -187,21 +189,24 @@ Wrapper of core_ml for Inovalon internal use.
 ```
 
 ```
-    "prospective": [
+{
+    "retrospective": [
         {
             "mem_id": 23023,
             "gaps": [
                 {
-                    "condition_category": "HCC55",
-                    "confidence": 0.455976,
-                    "known_current": 0,
-                    "known_historical": 0,
+                    "condition_category": "HCC188",
+                    "condition_description": "Artificial Openings for Feeding or Elimination",
+                    "confidence": 0.990729,
+                    "known": 1,
                     "top_indicators": [
-                        {
-                            "code": "A0425",
-                            "code_type": "HCPCS",
-                            "provider_id": []
-                        }
+                        "ICD10DX-K9423",
+                        "ICD10DX-K9429",
+                        "ICD10DX-Z931"
+                    ],
+                    "provider_id": [
+                        505,
+                        131157
                     ]
                 },
                 ...
@@ -209,22 +214,24 @@ Wrapper of core_ml for Inovalon internal use.
         },
         ...
     ],
-    "retrospective": [
+    "prospective": [
         {
             "mem_id": 23023,
             "gaps": [
                 {
-                    "condition_category": "HCC111",
-                    "confidence": 0.107791,
-                    "known": 1,
+                    "condition_category": "HCC188",
+                    "condition_description": "Artificial Openings for Feeding or Elimination",
+                    "confidence": 0.98871,
+                    "known": 0,
+                    "uccc": 1,
                     "top_indicators": [
-                        {
-                            "code": "J449",
-                            "code_type": "ICD10DX",
-                            "provider_id": [
-                                505
-                            ]
-                        }
+                        "ICD10DX-K9423",
+                        "ICD10DX-K9429",
+                        "ICD10DX-Z931"
+                    ],
+                    "provider_id": [
+                        505,
+                        131157
                     ]
                 },
                 ...
@@ -232,6 +239,7 @@ Wrapper of core_ml for Inovalon internal use.
         },
         ...
     ]
+}
 ```
 
 ### 2. detect_api

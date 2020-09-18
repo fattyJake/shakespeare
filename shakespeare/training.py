@@ -70,27 +70,53 @@ def update_mappings(model, sub_type_id):
         # fetch the mapping
         mapping_dict = cursor.execute(
             f"""
-            SELECT ICDVersionind,UPPER(icd_code),cmsfh_hcccode
+            SELECT ICDVersionind, UPPER(icd_code), cmsfh_hcccode
             FROM [CARA2_Processor].[dbo].[ModelCmsMapHccIcd]
             WHERE mdst_ModelSubTypeID = {sub_type_id}
                 AND mv_modelversionID = {model}"""
         ).fetchall()
 
+        hcc_dict = cursor.execute(
+            f"""
+            SELECT [cmsfh_HccCode], [cmsfh_HccName]
+            FROM [CARA2_Processor].[dbo].[ModelCmsFactorHcc]
+            WHERE [mv_ModelVersionID] = {model}
+                AND [mdst_ModelSubTypeID] = {sub_type_id}
+            """
+        )
+
     elif "HHS" in model_name:
         mapping_dict = cursor.execute(
             f"""
-            SELECT icdversionind,UPPER(icd_code),hhsfh_hcccode
+            SELECT icdversionind, UPPER(icd_code), hhsfh_hcccode
             FROM [HIX_Processor].[dbo].[ModelHHSMapHccIcd]
             WHERE mv_modelversionID = {model}"""
         ).fetchall()
 
+        hcc_dict = cursor.execute(
+            f"""
+            SELECT [HccCode], [HCCName]
+            FROM [HIX_Processor].[dbo].[ModelHHSHCCNames]
+            WHERE [mv_ModelVersionID] = {model}
+                AND [ModelSubType] = 'Adult'
+            """
+        )
+
     elif "CDPS" in model_name:
         mapping_dict = cursor.execute(
             f"""
-            SELECT icdversionind,UPPER(icd_code),cdps_code
+            SELECT icdversionind, UPPER(icd_code), cdps_code
             FROM [CARA2_Controller].[dbo].[ModelCdpsMapCdpsIcd]
             WHERE mv_modelversionID = {model}"""
         ).fetchall()
+
+        hcc_dict = cursor.execute(
+            f"""
+            SELECT [cdps_Code], [cdps_Name]
+            FROM [CARA2_Processor].[dbo].[ModelCdpsCodeCdps]
+            WHERE [mv_ModelVersionID] = {model}
+            """
+        )
 
     else:
         raise ValueError(
@@ -113,11 +139,15 @@ def update_mappings(model, sub_type_id):
             new_mapping_dict[f"ICD{str(i[0])}DX-" + str(i[1])].append(
                 str(i[2])
             )
+        hcc_dict = dict([(str(row[0]).upper(), row[1]) for row in hcc_dict])
     else:
         for i in mapping_dict:
             new_mapping_dict[f"ICD{str(i[0])}DX-" + str(i[1])].append(
                 "HCC" + str(i[2])
             )
+        hcc_dict = dict([('HCC' + str(row[0]).upper(), row[1]) for row in hcc_dict])
+
+    new_mapping_dict.update(hcc_dict)
 
     # dump the models
     pickle.dump(

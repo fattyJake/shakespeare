@@ -260,6 +260,7 @@ def get_indicators(
                 'gaps': [
                     {
                         'condition_category': str,
+                        'condition_description': str,
                         'confidence': float,
                         'known': bool,
                         *['uccc': bool,]
@@ -391,7 +392,16 @@ def get_indicators(
         gc.collect()
 
     condition = [
-        {"mem_id": mh_tuple[0], "gaps": {**{"condition_category": mh_tuple[1]}, **d}}
+        {
+            "mem_id": mh_tuple[0],
+            "gaps": {
+                **{
+                    "condition_category": mh_tuple[1],
+                    "condition_description": mappings.get(mh_tuple[1], "")
+                },
+                **d
+            }
+        }
         for mh_tuple, d in condition.items()
     ]
     condition = sorted(condition, key=operator.itemgetter("mem_id"))
